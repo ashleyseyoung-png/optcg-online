@@ -102,10 +102,41 @@ def variant_label(raw_name, raw_id, base_id):
     return None
 
 
+RARITY_CODES = {"C", "UC", "R", "SR", "SEC", "L", "SP", "TR", "P", "PR"}
+
+
+def repair_shifted_row(parts):
+    """A handful of raw rows (OP13/OP15 leaders, OP08-039) carry one extra field so rarity/types/text
+    land one slot to the right. Detect (rarity code sitting in the types slot) and put the values back
+    where the normal layout expects them. Verified against the API for OP13-002, OP15-001, OP15-058, OP08-039."""
+    if len(parts) < 13 or parts[10].strip() not in RARITY_CODES or parts[9].strip() in RARITY_CODES or parts[12].startswith("http"):
+        return parts
+    ctype = parts[2].strip()
+    def num(v):
+        v = v.strip()
+        return int(v) if re.fullmatch(r"-?\d+", v) else None
+    if ctype == "Leader":
+        # OP13 shape: life|-|-|-|power|attr|L|types|text ; OP15 shape: -|5|-|0|life|attr|L|types|text (power in thousands)
+        vals = [num(parts[i]) for i in range(4, 9)]
+        power = next((v for v in vals if v is not None and v >= 1000), None)
+        if power is None:
+            small = num(parts[5])
+            power = small * 1000 if small is not None and 0 < small < 100 else None
+        life = num(parts[4]) if num(parts[4]) is not None and num(parts[4]) <= 10 else (num(parts[8]) if num(parts[8]) is not None and num(parts[8]) <= 10 else None)
+        cost, counter = "-", "-"
+        attribute = parts[9].strip() if parts[9].strip() not in NULLS and num(parts[9]) is None and parts[9].strip() != "?" else "-"
+        fixed = [parts[0], parts[1], parts[2], parts[3], cost, str(power) if power is not None else "-", counter, str(life) if life is not None else "-", attribute, parts[10], parts[11], parts[12]] + parts[13:]
+        return fixed
+    # non-leader (e.g. OP08-039 Zou): cost|power|counter|life|attr|<extra>|rarity|types|text
+    fixed = [parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7], parts[8], parts[10], parts[11], parts[12]] + parts[13:]
+    return fixed
+
+
 def parse_line(line, source_file):
     parts = line.split("|", 13)
     if len(parts) < 12:
         return None
+    parts = repair_shifted_row(parts)
     rec = dict(zip(FIELDS, parts[:12]))
     image_field = clean(parts[12]) if len(parts) > 12 else None
     setid_field = clean(parts[13]) if len(parts) > 13 else None
@@ -125,6 +156,10 @@ def parse_line(line, source_file):
     life = to_int(rec["life"])
     attribute = clean(rec["attribute"])
     rarity = clean(rec["rarity"])
+    if ctype == "Leader":
+        rarity = "L"
+    elif rarity not in RARITY_CODES:
+        rarity = None
     sub_types = (clean(rec["sub_types"]) or "")
     types = [t for t in sub_types.split() if t] if sub_types else []
     text = clean(rec["card_text"]) or ""

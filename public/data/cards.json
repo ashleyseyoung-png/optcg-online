@@ -35157,11 +35157,11 @@
   "counter": 0,
   "life": null,
   "attribute": null,
-  "rarity": null,
+  "rarity": "R",
   "types": [
-   "R"
+   "Animal"
   ],
-  "text": "Animal",
+  "text": "[Activate:Main] You may rest this Stage: If your Leader has the [Minks] type, set up to 1 of your DON!! cards as active. [End of Your Turn] Set up to 1 of your [Minks] type Characters as active.",
   "keywords": [],
   "set": "OP08",
   "image": "https://optcgapi.com/media/static/Card_Images/OP08-039.jpg",
@@ -41624,18 +41624,23 @@
  {
   "id": "OP10-010",
   "baseId": "OP10-010",
-  "name": "There's No Longer Any Need for the Seven Warlords of the Sea!!!",
+  "name": "Chadros.Higelyges (Brownbeard)",
   "variant": null,
   "type": "Character",
-  "colors": [],
-  "cost": null,
-  "power": null,
+  "colors": [
+   "Red"
+  ],
+  "cost": 3,
+  "power": 5000,
   "counter": null,
   "life": null,
-  "attribute": null,
-  "rarity": null,
-  "types": [],
-  "text": "",
+  "attribute": "Slash",
+  "rarity": "C",
+  "types": [
+   "Punk Hazard",
+   "Brownbeard Pirates"
+  ],
+  "text": "[When Attacking] If you have 1 or less Characters with 6000 power or more, this Character gains +1000 power during this turn.",
   "keywords": [],
   "set": "OP10",
   "image": "https://optcgapi.com/media/static/Card_Images/OP10-010.jpg",
@@ -52353,16 +52358,17 @@
    "Green",
    "Red"
   ],
-  "cost": 4,
-  "power": null,
+  "cost": null,
+  "power": 5000,
   "counter": null,
-  "life": null,
-  "attribute": "5000",
-  "rarity": "Strike",
+  "life": 4,
+  "attribute": "Strike",
+  "rarity": "L",
   "types": [
-   "L"
+   "Straw Hat Crew",
+   "Supernovas"
   ],
-  "text": "Straw Hat Crew Supernovas",
+  "text": "[DON!! x1] [On Your Opponent's Attack] If you have 5 or less active DON!! cards, you may rest any number of your DON!! cards. For every DON!! card rested this way, this Leader or up to 1 of your \"Straw Hat Crew\" type Characters gains +2000 power during this battle.",
   "keywords": [],
   "set": "OP13",
   "image": "https://optcgapi.com/media/static/Card_Images/OP13-001.jpg",
@@ -52378,16 +52384,17 @@
    "Green",
    "Red"
   ],
-  "cost": 4,
-  "power": null,
+  "cost": null,
+  "power": 5000,
   "counter": null,
-  "life": null,
-  "attribute": "5000",
-  "rarity": "Strike",
+  "life": 4,
+  "attribute": "Strike",
+  "rarity": "L",
   "types": [
-   "L"
+   "Straw Hat Crew",
+   "Supernovas"
   ],
-  "text": "Straw Hat Crew Supernovas",
+  "text": "[DON!! x1] [On Your Opponent's Attack] If you have 5 or less active DON!! cards, you may rest any number of your DON!! cards. For every DON!! card rested this way, this Leader or up to 1 of your \"Straw Hat Crew\" type Characters gains +2000 power during this battle.",
   "keywords": [],
   "set": "OP13",
   "image": "https://optcgapi.com/media/static/Card_Images/OP13-001_p1.jpg",
@@ -52403,16 +52410,16 @@
    "Blue",
    "Red"
   ],
-  "cost": 3,
-  "power": null,
+  "cost": null,
+  "power": 6000,
   "counter": null,
-  "life": null,
-  "attribute": "6000",
-  "rarity": "Special",
+  "life": 3,
+  "attribute": "Special",
+  "rarity": "L",
   "types": [
-   "L"
+   "Whitebeard Pirates"
   ],
-  "text": "Whitebeard Pirates",
+  "text": "[On Your Opponent's Attack] [Once Per Turn] You may trash 1 card from your hand: Give up to 1 of your opponent's Leader or Character cards 2000 power during this battle.[DON!! x1] [Once Per Turn] When you take damage or your Character with 6000 base power or more is K.O.'d, draw 1 card.",
   "keywords": [],
   "set": "OP13",
   "image": "https://optcgapi.com/media/static/Card_Images/OP13-002.jpg",
@@ -52428,16 +52435,16 @@
    "Blue",
    "Red"
   ],
-  "cost": 3,
-  "power": null,
+  "cost": null,
+  "power": 6000,
   "counter": null,
-  "life": null,
-  "attribute": "6000",
-  "rarity": "Special",
+  "life": 3,
+  "attribute": "Special",
+  "rarity": "L",
   "types": [
-   "L"
+   "Whitebeard Pirates"
   ],
-  "text": "Whitebeard Pirates",
+  "text": "[On Your Opponent's Attack] [Once Per Turn] You may trash 1 card from your hand: Give up to 1 of your opponent's Leader or Character cards 2000 power during this battle.[DON!! x1] [Once Per Turn] When you take damage or your Character with 6000 base power or more is K.O.'d, draw 1 card.",
   "keywords": [],
   "set": "OP13",
   "image": "https://optcgapi.com/media/static/Card_Images/OP13-002_p1.jpg",
@@ -52453,16 +52460,16 @@
    "Purple",
    "Red"
   ],
-  "cost": 5,
-  "power": null,
+  "cost": null,
+  "power": 7000,
   "counter": null,
-  "life": null,
-  "attribute": "7000",
-  "rarity": "Slash",
+  "life": 5,
+  "attribute": "Slash",
+  "rarity": "L",
   "types": [
-   "L"
+   "Roger Pirates King of the Pirates"
   ],
-  "text": "Roger Pirates King of the Pirates",
+  "text": "If you have any DON!! cards on your field, 1 DON!! card placed during your DON!! Phase is given to your Leader.If you have 9 or less DON!! cards on your field, give this Leader 2000 power.",
   "keywords": [],
   "set": "OP13",
   "image": "https://optcgapi.com/media/static/Card_Images/OP13-003.jpg",
@@ -52478,16 +52485,16 @@
    "Purple",
    "Red"
   ],
-  "cost": 5,
-  "power": null,
+  "cost": null,
+  "power": 7000,
   "counter": null,
-  "life": null,
-  "attribute": "7000",
-  "rarity": "Slash",
+  "life": 5,
+  "attribute": "Slash",
+  "rarity": "L",
   "types": [
-   "L"
+   "Roger Pirates King of the Pirates"
   ],
-  "text": "Roger Pirates King of the Pirates",
+  "text": "If you have any DON!! cards on your field, 1 DON!! card placed during your DON!! Phase is given to your Leader.If you have 9 or less DON!! cards on your field, give this Leader 2000 power.",
   "keywords": [],
   "set": "OP13",
   "image": "https://optcgapi.com/media/static/Card_Images/OP13-003_p1.jpg",
@@ -52503,16 +52510,17 @@
    "Red",
    "Black"
   ],
-  "cost": 5,
-  "power": null,
+  "cost": null,
+  "power": 5000,
   "counter": null,
-  "life": null,
-  "attribute": "5000",
-  "rarity": "Special",
+  "life": 5,
+  "attribute": "Special",
+  "rarity": "L",
   "types": [
-   "L"
+   "Revolutionary Army",
+   "Dressrosa"
   ],
-  "text": "Revolutionary Army Dressrosa",
+  "text": "If you have 4 or more Life cards, give this Leader 1000 power.[DON!! x1] If you have a Character with a cost of 8 or more, your Leader and all of your Characters gain +1000 power.",
   "keywords": [],
   "set": "OP13",
   "image": "https://optcgapi.com/media/static/Card_Images/OP13-004.jpg",
@@ -52528,16 +52536,17 @@
    "Red",
    "Black"
   ],
-  "cost": 5,
-  "power": null,
+  "cost": null,
+  "power": 5000,
   "counter": null,
-  "life": null,
-  "attribute": "5000",
-  "rarity": "Special",
+  "life": 5,
+  "attribute": "Special",
+  "rarity": "L",
   "types": [
-   "L"
+   "Revolutionary Army",
+   "Dressrosa"
   ],
-  "text": "Revolutionary Army Dressrosa",
+  "text": "If you have 4 or more Life cards, give this Leader 1000 power.[DON!! x1] If you have a Character with a cost of 8 or more, your Leader and all of your Characters gain +1000 power.",
   "keywords": [],
   "set": "OP13",
   "image": "https://optcgapi.com/media/static/Card_Images/OP13-004_p1.jpg",
@@ -54647,16 +54656,16 @@
   "colors": [
    "Black"
   ],
-  "cost": 4,
-  "power": null,
+  "cost": null,
+  "power": 5000,
   "counter": null,
-  "life": null,
-  "attribute": "5000",
-  "rarity": "?",
+  "life": 4,
+  "attribute": null,
+  "rarity": "L",
   "types": [
-   "L"
+   "?"
   ],
-  "text": "?",
+  "text": "Under the rules of this game, you cannot include Events with a cost of 2 or more in your deck and at the start of the game, play up to 1 [Mary Geoise] type Stage card from your deck.[Activate: Main] [Once Per Turn] You may trash 1 of your [Celestial Dragons] type Characters or 1 card from your hand: Draw 1 card.",
   "keywords": [],
   "set": "OP13",
   "image": "https://optcgapi.com/media/static/Card_Images/OP13-079.jpg",
@@ -54671,16 +54680,16 @@
   "colors": [
    "Black"
   ],
-  "cost": 4,
-  "power": null,
+  "cost": null,
+  "power": 5000,
   "counter": null,
-  "life": null,
-  "attribute": "5000",
-  "rarity": "?",
+  "life": 4,
+  "attribute": null,
+  "rarity": "L",
   "types": [
-   "L"
+   "?"
   ],
-  "text": "?",
+  "text": "Under the rules of this game, you cannot include Events with a cost of 2 or more in your deck and at the start of the game, play up to 1 [Mary Geoise] type Stage card from your deck.[Activate: Main] [Once Per Turn] You may trash 1 of your [Celestial Dragons] type Characters or 1 card from your hand: Draw 1 card.",
   "keywords": [],
   "set": "OP13",
   "image": "https://optcgapi.com/media/static/Card_Images/OP13-079_p1.jpg",
@@ -55356,17 +55365,20 @@
   "colors": [
    "Yellow"
   ],
-  "cost": 5,
-  "power": null,
+  "cost": null,
+  "power": 5000,
   "counter": null,
-  "life": null,
-  "attribute": "5000",
-  "rarity": "Special",
+  "life": 5,
+  "attribute": "Special",
+  "rarity": "L",
   "types": [
-   "L"
+   "Bonney Pirates",
+   "Egghead"
   ],
-  "text": "Bonney Pirates Egghead",
-  "keywords": [],
+  "text": "[Your Turn] [Once Per Turn] This effect can be activated when you play a Character with a [Trigger]. Give up to 2 rested DON!! cards to 1 of your Leader or Character cards.",
+  "keywords": [
+   "Trigger"
+  ],
   "set": "OP13",
   "image": "https://optcgapi.com/media/static/Card_Images/OP13-100.jpg",
   "image2": "https://en.onepiece-cardgame.com/images/cardlist/card/OP13-100.png"
@@ -55380,17 +55392,20 @@
   "colors": [
    "Yellow"
   ],
-  "cost": 5,
-  "power": null,
+  "cost": null,
+  "power": 5000,
   "counter": null,
-  "life": null,
-  "attribute": "5000",
-  "rarity": "Special",
+  "life": 5,
+  "attribute": "Special",
+  "rarity": "L",
   "types": [
-   "L"
+   "Bonney Pirates",
+   "Egghead"
   ],
-  "text": "Bonney Pirates Egghead",
-  "keywords": [],
+  "text": "[Your Turn] [Once Per Turn] This effect can be activated when you play a Character with a [Trigger]. Give up to 2 rested DON!! cards to 1 of your Leader or Character cards.",
+  "keywords": [
+   "Trigger"
+  ],
   "set": "OP13",
   "image": "https://optcgapi.com/media/static/Card_Images/OP13-100_p1.jpg",
   "image2": "https://en.onepiece-cardgame.com/images/cardlist/card/OP13-100_p1.png"
@@ -59686,15 +59701,16 @@
    "Red"
   ],
   "cost": null,
-  "power": 5,
+  "power": 5000,
   "counter": null,
-  "life": 0,
-  "attribute": "4",
-  "rarity": "Slash",
+  "life": 4,
+  "attribute": "Slash",
+  "rarity": "L",
   "types": [
-   "L"
+   "Krieg Pirates",
+   "East Blue"
   ],
-  "text": "Krieg Pirates East Blue",
+  "text": "[DON!! x1] [Opponent's Turn] If the only Characters on your field are {East Blue} type Characters, give all of your opponent's Characters -2000 power. [Activate: Main] [Once Per Turn] Rest up to 1 of your opponent's Characters that has 2 or more DON!! cards given.",
   "keywords": [],
   "set": "OP15",
   "image": "https://optcgapi.com/media/static/Card_Images/OP15-001.jpg",
@@ -61422,15 +61438,15 @@
    "Purple"
   ],
   "cost": null,
-  "power": 5,
+  "power": 5000,
   "counter": null,
-  "life": 0,
-  "attribute": "5",
-  "rarity": "Special",
+  "life": 5,
+  "attribute": "Special",
+  "rarity": "L",
   "types": [
-   "L"
+   "Sky Island"
   ],
-  "text": "Sky Island",
+  "text": "Under the rules of this game, your DON!! deck consists of 6 cards. [Activate: Main] [Once Per Turn] If it is your second turn or later, add up to 1 DON!! card from your DON!! deck and set it as active, and add up to 4 additional DON!! cards and rest them. Then, give up to 4 rested DON!! cards to 1 of your Characters.",
   "keywords": [],
   "set": "OP15",
   "image": "https://optcgapi.com/media/static/Card_Images/OP15-058.jpg",
@@ -68129,7 +68145,7 @@
   "counter": 0,
   "life": 5,
   "attribute": "Special",
-  "rarity": "PR",
+  "rarity": "L",
   "types": [
    "FILM"
   ],
@@ -68153,7 +68169,7 @@
   "counter": 0,
   "life": 5,
   "attribute": "Special",
-  "rarity": "PR",
+  "rarity": "L",
   "types": [
    "FILM"
   ],
@@ -68177,7 +68193,7 @@
   "counter": 0,
   "life": 5,
   "attribute": "Special",
-  "rarity": "PR",
+  "rarity": "L",
   "types": [
    "FILM"
   ],
@@ -70885,7 +70901,7 @@
   "counter": 0,
   "life": 5,
   "attribute": "Strike",
-  "rarity": "PR",
+  "rarity": "L",
   "types": [
    "Straw Hat Crew"
   ],
@@ -70909,7 +70925,7 @@
   "counter": 0,
   "life": 5,
   "attribute": "Strike",
-  "rarity": "PR",
+  "rarity": "L",
   "types": [
    "Straw Hat Crew"
   ],
@@ -70933,7 +70949,7 @@
   "counter": 0,
   "life": 5,
   "attribute": "Strike",
-  "rarity": "PR",
+  "rarity": "L",
   "types": [
    "Straw Hat Crew"
   ],
@@ -72904,7 +72920,7 @@
   "counter": 0,
   "life": 4,
   "attribute": "Special Strike",
-  "rarity": "PR",
+  "rarity": "L",
   "types": [
    "Navy"
   ],
@@ -72929,7 +72945,7 @@
   "counter": 0,
   "life": 4,
   "attribute": "Special Strike",
-  "rarity": "PR",
+  "rarity": "L",
   "types": [
    "Navy"
   ],
@@ -73895,7 +73911,7 @@
   "counter": 0,
   "life": 4,
   "attribute": "Slash",
-  "rarity": "PR",
+  "rarity": "L",
   "types": [
    "Heart Pirates"
   ],
@@ -73920,7 +73936,7 @@
   "counter": 0,
   "life": 4,
   "attribute": "Slash",
-  "rarity": "PR",
+  "rarity": "L",
   "types": [
    "Heart Pirates"
   ],
@@ -75705,7 +75721,7 @@
   "counter": 0,
   "life": 5,
   "attribute": "Wisdom",
-  "rarity": "PR",
+  "rarity": "L",
   "types": [
    "East Blue"
   ],

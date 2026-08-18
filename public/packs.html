@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="referrer" content="no-referrer" />
+<title>Rip Packs — Grand Line TCG</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="packs-page">
+<header class="topnav">
+  <div class="brand"><span class="skull">☠</span> Grand Line TCG</div>
+  <nav>
+    <a href="/index.html">Home</a>
+    <a href="/learn.html">Learn</a>
+    <a href="/decks.html">Deck Builder</a>
+    <a href="/play.html">Play</a>
+    <a href="/packs.html" class="active">Packs</a>
+    <a href="/collection.html">Collection</a>
+    <a href="/settings.html">Settings</a>
+  </nav>
+  <div class="user-box" id="user-box"></div>
+</header>
+
+<!-- ===== stage 1: pick a set ===== -->
+<section class="packs-shelf" id="stage-sets">
+  <div class="packs-head">
+    <div>
+      <h1 style="margin:6px 0;">Rip Packs</h1>
+      <p class="packs-sub">Pick a set. Every card that lands in your packs is added to your <a href="/collection.html">Collection</a> — sign in (or play as guest) so it sticks. <span class="odds-link" id="odds-link">How are the odds modelled? ⓘ</span></p>
+    </div>
+    <div class="packs-stats" id="packs-stats"></div>
+  </div>
+  <div class="set-grid" id="set-grid"><div class="ds-muted">Loading sets…</div></div>
+</section>
+
+<!-- ===== stage 2: open ===== -->
+<section class="packs-open" id="stage-open" style="display:none;">
+  <div class="open-top">
+    <button class="btn small secondary" id="back-to-sets">← All sets</button>
+    <div class="open-title" id="open-title"></div>
+    <div class="open-qty" id="open-qty">
+      <span class="qty-label">How many?</span>
+      <button class="qty-chip on" data-qty="1">1 pack</button>
+      <button class="qty-chip" data-qty="4">4</button>
+      <button class="qty-chip" data-qty="12">12</button>
+      <button class="qty-chip" data-qty="24">Box (24)</button>
+    </div>
+  </div>
+
+  <div class="rip-arena" id="rip-arena">
+    <!-- the sealed pack -->
+    <div class="pack-wrap" id="pack-wrap">
+      <div class="pack" id="pack">
+        <div class="pack-tear" id="pack-tear"></div>
+        <div class="pack-body">
+          <div class="pack-shine"></div>
+          <div class="pack-art" id="pack-art"></div>
+          <div class="pack-label"><span class="pack-brand">GRAND LINE TCG</span><span class="pack-set" id="pack-set-name"></span><span class="pack-code" id="pack-set-code"></span><span class="pack-count">12 CARDS</span></div>
+        </div>
+      </div>
+      <button class="btn gold big rip-btn" id="rip-btn">Rip it open!</button>
+      <div class="rip-hint" id="rip-hint">Space / Enter also rips</div>
+    </div>
+
+    <!-- the cards -->
+    <div class="reveal-wrap" id="reveal-wrap" style="display:none;">
+      <div class="reveal-progress" id="reveal-progress"></div>
+      <div class="reveal-row" id="reveal-row"></div>
+      <div class="reveal-actions" id="reveal-actions">
+        <button class="btn small secondary" id="flip-next-btn">Flip next (Space)</button>
+        <button class="btn small secondary" id="flip-all-btn">Flip all (Enter)</button>
+        <label class="auto-flip"><input type="checkbox" id="auto-flip" /> Auto-flip</label>
+      </div>
+      <div class="pack-summary" id="pack-summary" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="recent-hits" id="recent-hits"></div>
+</section>
+
+<!-- box / session results -->
+<div id="results-root"></div>
+<div id="fx-layer" class="fx-layer"></div>
+<div id="flash-layer" class="flash-layer"></div>
+
+<footer>Card data & images sourced from public One Piece TCG card databases for reference use. Pack odds are a model of community-documented pull rates — see ⓘ above.</footer>
+
+<script src="/js/settings.js"></script>
+<script src="/js/sfx.js"></script>
+<script src="/js/bgm.js"></script>
+<script src="/js/packfx.js"></script>
+<script src="/js/common.js"></script>
+<script src="/js/packs.js"></script>
+</body>
+</html>

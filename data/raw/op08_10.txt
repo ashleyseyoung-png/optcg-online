@@ -393,4 +393,4 @@ OP10-043|Moocy|Character|Blue|2|2000|1000|-|Strike|C|Animal Dressrosa|[On Play] 
 OP10-084|Sanjuan.Wolf|Character|Black|5|7000|1000|-|Special|C|Blackbeard Pirates Giant|-
 OP10-003|Sugar (003)|Leader|Purple Red|-|5000|4|-|Special|L|Donquixote Pirates|[End of Your Turn] If you have a {Donquixote Pirates} type Character with 6000 power or more, set up to 1 of your DON!! cards as active.[Opponent's Turn] [Once Per Turn] When you activate an Event, add up to 1 DON!! card from your DON!! deck and set it as active.
 OP10-051|Hack|Character|Blue|4|5000|1000|-|Strike|UC|Fish-Man Revolutionary Army Dressrosa|[DON!! x1] [When Attacking] Look at 3 cards from the top of your deck; reveal up to 1 "Revolutionary Army" type Character card and add it to your hand. Then, place the rest at the bottom of your deck in any order.
-OP10-010|There's No Longer Any Need for the Seven Warlords of the Sea!!!|-|-|-|-|-|-|-|-|-|-|-
+OP10-010|Chadros.Higelyges (Brownbeard)|Character|Red|3|5000|-|-|Slash|C|Punk Hazard Brownbeard Pirates|[When Attacking] If you have 1 or less Characters with 6000 power or more, this Character gains +1000 power during this turn.

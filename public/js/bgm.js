@@ -161,7 +161,7 @@
     if (S.ctx.state !== 'running') return;
     S.playing = true;
     S.nextTime = S.ctx.currentTime + 0.05;
-    fadeTo(volume(), 1.2);
+    fadeTo(volume() * duckMul, 1.2);
     tick();
     S.timer = setInterval(tick, 120);
   }
@@ -172,10 +172,13 @@
     if (S.timer) { clearInterval(S.timer); S.timer = null; }
     if (S.master) fadeTo(0, 0.5);
   }
+  let duckMul = 1;
   function applyVolume() {
-    if (S.audioEl) S.audioEl.volume = volume();
-    if (S.master && S.playing) fadeTo(volume(), 0.2);
+    if (S.audioEl) S.audioEl.volume = volume() * duckMul;
+    if (S.master && S.playing) fadeTo(volume() * duckMul, 0.2);
   }
+  // Temporarily lower the music (e.g. while ripping packs so the reveal sounds carry)
+  function duck(on, mul = 0.35) { duckMul = on ? mul : 1; applyVolume(); }
 
   // Unlock/start on the first user gesture; stop/start when the setting flips.
   const unlock = () => { S.unlocked = true; if (enabled() && !(window.SFX && SFX.muted)) start(); };
@@ -192,5 +195,5 @@
   // Pause when the tab is hidden (be a good neighbour), resume when it's back.
   document.addEventListener('visibilitychange', () => { if (document.hidden) { if (S.master && S.playing) fadeTo(0, 0.3); } else if (S.playing && S.master) fadeTo(volume(), 0.6); });
 
-  window.BGM = { start, stop, get playing() { return S.playing; } };
+  window.BGM = { start, stop, duck, get playing() { return S.playing; } };
 })();

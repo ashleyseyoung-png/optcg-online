@@ -20,6 +20,8 @@ load();
 
 function getCard(id) { return BY_ID.get(id); }
 function allCards() { return CARDS; }
+const reloadHooks = [];
+function onReload(fn) { reloadHooks.push(fn); }
 
 // ---------------------------------------------------------------------------------------
 // Background card-list refresh: pulls any printings we don't have yet (new sets, alt arts)
@@ -47,6 +49,7 @@ function scheduleCardSync(dataDir) {
         try {
           const n = CARDS.length;
           load();
+          reloadHooks.forEach((fn) => { try { fn(); } catch (e) { /* ignore */ } });
           if (CARDS.length !== n) console.log(`Card list refreshed: ${n} → ${CARDS.length} printings.`);
         } catch (e) { console.warn('Card list reload failed:', e.message); }
       }
@@ -151,4 +154,4 @@ function registerRoutes(router) {
   });
 }
 
-module.exports = { registerRoutes, getCard, allCards, load, scheduleCardSync, setImageCacheDir };
+module.exports = { registerRoutes, getCard, allCards, load, scheduleCardSync, setImageCacheDir, onReload };

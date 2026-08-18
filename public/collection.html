@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="referrer" content="no-referrer" />
+<title>My Collection — Grand Line TCG</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<header class="topnav">
+  <div class="brand"><span class="skull">☠</span> Grand Line TCG</div>
+  <nav>
+    <a href="/index.html">Home</a>
+    <a href="/learn.html">Learn</a>
+    <a href="/decks.html">Deck Builder</a>
+    <a href="/play.html">Play</a>
+    <a href="/packs.html">Packs</a>
+    <a href="/collection.html" class="active">Collection</a>
+    <a href="/settings.html">Settings</a>
+  </nav>
+  <div class="user-box" id="user-box"></div>
+</header>
+
+<section class="coll-page">
+  <div class="packs-head">
+    <div>
+      <h1 style="margin:6px 0;">My Collection</h1>
+      <p class="packs-sub" id="coll-sub">Everything you've pulled from packs lives here.</p>
+    </div>
+    <div class="packs-stats" id="coll-stats"></div>
+  </div>
+
+  <div class="coll-recent" id="coll-recent"></div>
+
+  <div class="builder-toolbar coll-toolbar">
+    <input id="coll-search" placeholder="Search name or code…" />
+    <select id="coll-set"><option value="">All sets</option></select>
+    <select id="coll-tier">
+      <option value="">All rarities</option>
+      <option value="hits">Hits only (SR / SEC / alt art / manga)</option>
+      <option value="L">Leaders</option>
+      <option value="SR">Super Rare</option>
+      <option value="SEC">Secret Rare</option>
+      <option value="alt">Alt art / parallel</option>
+      <option value="R">Rare</option>
+      <option value="UC">Uncommon</option>
+      <option value="C">Common</option>
+    </select>
+    <select id="coll-sort">
+      <option value="recent">Newest first</option>
+      <option value="rarity">Rarity</option>
+      <option value="count">Most copies</option>
+      <option value="code">Card code</option>
+    </select>
+    <span id="coll-count" style="color:var(--paper-2); font-size:0.8rem; white-space:nowrap;"></span>
+  </div>
+  <div class="card-grid coll-grid" id="coll-grid"></div>
+</section>
+
+<footer>Card data & images sourced from public One Piece TCG card databases for reference use.</footer>
+
+<script src="/js/settings.js"></script>
+<script src="/js/sfx.js"></script>
+<script src="/js/bgm.js"></script>
+<script src="/js/common.js"></script>
+<script src="/js/collection.js"></script>
+</body>
+</html>

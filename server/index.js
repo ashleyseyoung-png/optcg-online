@@ -8,6 +8,7 @@ const decks = require('./decks');
 const cards = require('./cards');
 const rooms = require('./game/rooms');
 const starters = require('./starter-decks');
+const packs = require('./packs');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -18,6 +19,7 @@ auth.registerRoutes(router);
 cards.registerRoutes(router);
 decks.registerRoutes(router);
 starters.registerRoutes(router, { sendJson });
+packs.registerRoutes(router);
 rooms.registerRoutes(router, { attachSession: auth.attachSession, ownerKey: auth.ownerKey, sendJson, readJsonBody: require('./http-helpers').readJsonBody });
 
 const staticHandler = serveStatic(PUBLIC_DIR);
