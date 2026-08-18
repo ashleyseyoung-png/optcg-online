@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="referrer" content="no-referrer" />
+<title>Table — Grand Line TCG</title>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/board.css" />
+</head>
+<body class="board-page">
+
+<div id="waiting-wrap" class="waiting-screen" style="display:none;">
+  <div class="waiting-card">
+    <div class="spinner"></div>
+    <h2>Waiting for your opponent…</h2>
+    <p>Share this room code:</p>
+    <div class="lobby-code" id="waiting-code"></div>
+    <div style="display:flex; gap:8px; justify-content:center;">
+      <button class="pill" id="waiting-copy">Copy Code</button>
+      <a class="pill ghost" href="/play.html">← Back to Lobby</a>
+    </div>
+  </div>
+</div>
+
+<div class="table-page" id="board-wrap" style="display:none;">
+  <div class="bg-bokeh"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+  <!-- top bar -->
+  <div class="topbar">
+    <div class="tb-left">
+      <a class="brand-mini" href="/index.html">Grand Line TCG</a>
+      <span class="chip room-chip">Room <b id="room-code-label"></b></span>
+    </div>
+    <div class="tb-center"><span class="turn-pill" id="turn-indicator"></span></div>
+    <div class="tb-right">
+      <button class="icon-btn" data-sfx-toggle title="Toggle sounds">🔊</button>
+      <button class="icon-btn" id="toggle-side-btn" title="Log & chat">💬</button>
+      <a class="icon-btn" href="/play.html" title="Leave table">🏠</a>
+      <button class="icon-btn danger" id="concede-btn" title="Concede">🏳️</button>
+    </div>
+  </div>
+
+  <div class="arena">
+    <!-- drawer: coach / log / chat / toolbox -->
+    <aside class="drawer" id="side-panel">
+      <div class="drawer-head" id="phase-banner"></div>
+      <div class="side-tabs">
+        <button class="side-tab active" data-tab="log">Log</button>
+        <button class="side-tab" data-tab="tools">Toolbox</button>
+      </div>
+      <div class="side-body">
+        <div class="game-log" id="game-log"></div>
+        <div class="toolbox-panel" id="toolbox-panel" style="display:none;">
+          <div class="tb-note">For card effects the game can't resolve automatically: apply the printed effect by hand. Click a card on the table to target it.</div>
+          <div class="tb-row">
+            <button class="pill sm" data-tb="draw">Draw 1</button>
+            <button class="pill sm" data-tb="donActivePlus">+1 Active DON</button>
+            <button class="pill sm" data-tb="donActiveMinus">−1 Active DON</button>
+            <button class="pill sm" data-tb="donDeckPlus">+1 DON Deck</button>
+            <button class="pill sm" data-tb="donDeckMinus">−1 DON Deck</button>
+            <button class="pill sm" data-tb="discardHand">Discard from Hand</button>
+          </div>
+          <div id="tb-target-info" class="tb-target-info"></div>
+          <div class="tb-row" id="tb-target-actions"></div>
+        </div>
+      </div>
+      <div class="quick-chat" id="quick-chat">
+        <button class="qc" data-say="Good luck, have fun!">GLHF</button>
+        <button class="qc" data-say="Nice one!">Nice!</button>
+        <button class="qc" data-say="Thinking…">Thinking…</button>
+        <button class="qc" data-say="Oops.">Oops</button>
+        <button class="qc" data-say="Good game!">GG</button>
+      </div>
+      <div class="chat-row">
+        <input id="chat-input" placeholder="Say something…" maxlength="300" />
+        <button class="pill sm primary" id="chat-send-btn">Send</button>
+      </div>
+      <div class="drawer-resizer" id="drawer-resizer" title="Drag to resize"></div>
+    </aside>
+
+    <!-- the table -->
+    <div class="table-wrap" id="felt">
+      <!-- tutorial coach: one slim line above the table, expandable -->
+      <div class="coach-strip" id="coach-panel" style="display:none;"></div>
+      <div class="table">
+        <div class="opp-hand-strip" id="opp-hand" data-key="HA1"></div>
+        <div class="side-row opp" id="opp-mat"></div>
+        <div class="mid-line">
+          <div class="phase-pips" id="phase-pips"></div>
+          <span class="turn-badge" id="center-badge"></span>
+        </div>
+        <div class="side-row me" id="me-mat"></div>
+      </div>
+    </div>
+
+    <!-- floating card preview -->
+    <div class="card-preview" id="card-preview">
+      <img id="cp-img" alt="" />
+      <div class="cp-info">
+        <div class="cp-name" id="cp-name">Hover a card</div>
+        <div class="cp-meta" id="cp-meta">Any card on the table or in your hand shows here. Right-click to pin.</div>
+        <div class="cp-text" id="cp-text"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- bottom: hand + actions -->
+  <div class="bottom-bar">
+    <div class="bb-left">
+      <div class="me-name" id="me-name"></div>
+      <div class="me-sub" id="me-sub"></div>
+    </div>
+    <div class="bb-center">
+      <div class="prompt-slot" id="prompt-root"></div>
+      <div class="hand-fan" id="hand-row" data-key="HA0"></div>
+    </div>
+    <div class="bb-right">
+      <button class="pill primary big" id="end-turn-btn">End Turn</button>
+      <div class="bb-small">
+        <button class="pill" id="attach-don-btn">Attach DON!!</button>
+        <button class="pill" id="toolbox-btn">Toolbox</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="turn-banner" id="turn-banner"></div>
+<div id="fly-layer"></div>
+<div id="gameover-root"></div>
+
+<script src="/js/sfx.js"></script>
+<script src="/js/common.js"></script>
+<script src="/js/game.js"></script>
+</body>
+</html>

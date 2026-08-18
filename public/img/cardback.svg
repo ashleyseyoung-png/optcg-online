@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 350" width="250" height="350">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e2a52"/><stop offset="0.5" stop-color="#101838"/><stop offset="1" stop-color="#070b1c"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.45" r="0.5">
+      <stop offset="0" stop-color="#3b4b8f" stop-opacity="0.55"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7dc8a"/><stop offset="0.5" stop-color="#d9ad3f"/><stop offset="1" stop-color="#8f6412"/>
+    </linearGradient>
+    <pattern id="grid" width="12" height="12" patternUnits="userSpaceOnUse">
+      <path d="M12 0H0V12" fill="none" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="250" height="350" rx="14" fill="url(#bg)"/>
+  <rect width="250" height="350" rx="14" fill="url(#grid)"/>
+  <rect width="250" height="350" rx="14" fill="url(#glow)"/>
+  <rect x="7" y="7" width="236" height="336" rx="10" fill="none" stroke="url(#gold)" stroke-width="2.5"/>
+  <rect x="13" y="13" width="224" height="324" rx="7" fill="none" stroke="url(#gold)" stroke-width="0.8" stroke-opacity="0.7"/>
+  <!-- compass rose -->
+  <g transform="translate(125 158)">
+    <circle r="78" fill="none" stroke="url(#gold)" stroke-width="1.6"/>
+    <circle r="70" fill="none" stroke="url(#gold)" stroke-width="0.6" stroke-opacity="0.8"/>
+    <g stroke="url(#gold)" stroke-width="1" stroke-opacity="0.9">
+      <g id="ticks">
+        <line x1="0" y1="-78" x2="0" y2="-71"/><line x1="0" y1="-78" x2="0" y2="-71" transform="rotate(15)"/><line x1="0" y1="-78" x2="0" y2="-71" transform="rotate(30)"/><line x1="0" y1="-78" x2="0" y2="-71" transform="rotate(45)"/><line x1="0" y1="-78" x2="0" y2="-71" transform="rotate(60)"/><line x1="0" y1="-78" x2="0" y2="-71" transform="rotate(75)"/>
+      </g>
+      <use href="#ticks" transform="rotate(90)"/><use href="#ticks" transform="rotate(180)"/><use href="#ticks" transform="rotate(270)"/>
+    </g>
+    <!-- 8-point star -->
+    <polygon points="0,-64 8,-8 64,0 8,8 0,64 -8,8 -64,0 -8,-8" fill="url(#gold)"/>
+    <polygon points="0,-64 8,-8 0,0 -8,-8" fill="#5b3f0a" fill-opacity="0.55"/>
+    <polygon points="64,0 8,8 0,0 8,-8" fill="#5b3f0a" fill-opacity="0.55"/>
+    <polygon points="0,64 -8,8 0,0 8,8" fill="#5b3f0a" fill-opacity="0.55"/>
+    <polygon points="-64,0 -8,-8 0,0 -8,8" fill="#5b3f0a" fill-opacity="0.55"/>
+    <polygon points="0,-40 5,-5 40,0 5,5 0,40 -5,5 -40,0 -5,-5" fill="url(#gold)" transform="rotate(45)" opacity="0.9"/>
+    <circle r="9" fill="#101838" stroke="url(#gold)" stroke-width="2"/>
+    <circle r="3.5" fill="url(#gold)"/>
+  </g>
+  <!-- wordmark -->
+  <text x="125" y="286" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="30" letter-spacing="2" fill="url(#gold)">ONE PIECE</text>
+  <text x="125" y="306" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="600" font-size="12" letter-spacing="5" fill="#e9dcb0">CARD GAME</text>
+  <circle cx="125" cy="322" r="1.6" fill="#d9ad3f"/><line x1="70" y1="322" x2="118" y2="322" stroke="#d9ad3f" stroke-width="0.8"/><line x1="132" y1="322" x2="180" y2="322" stroke="#d9ad3f" stroke-width="0.8"/>
+</svg>

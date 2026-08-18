@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 350" width="250" height="350">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2a2e"/><stop offset="1" stop-color="#0c0c0f"/></linearGradient>
+    <linearGradient id="wh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d9d9d9"/></linearGradient>
+  </defs>
+  <rect width="250" height="350" rx="14" fill="url(#bg)"/>
+  <rect x="7" y="7" width="236" height="336" rx="10" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2"/>
+  <!-- speed lines -->
+  <g stroke="#ffffff" stroke-opacity="0.12" stroke-width="3">
+    <line x1="125" y1="175" x2="20" y2="40"/><line x1="125" y1="175" x2="230" y2="40"/><line x1="125" y1="175" x2="20" y2="310"/><line x1="125" y1="175" x2="230" y2="310"/>
+    <line x1="125" y1="175" x2="125" y2="20"/><line x1="125" y1="175" x2="125" y2="330"/><line x1="125" y1="175" x2="15" y2="175"/><line x1="125" y1="175" x2="235" y2="175"/>
+    <line x1="125" y1="175" x2="60" y2="25"/><line x1="125" y1="175" x2="190" y2="25"/><line x1="125" y1="175" x2="60" y2="325"/><line x1="125" y1="175" x2="190" y2="325"/>
+  </g>
+  <!-- DON!! burst text -->
+  <g transform="translate(125 190) rotate(-8)">
+    <text x="0" y="0" text-anchor="middle" font-family="Impact, 'Arial Black', Helvetica, sans-serif" font-weight="900" font-size="88" fill="#000" stroke="#000" stroke-width="14" stroke-linejoin="round">DON!!</text>
+    <text x="0" y="0" text-anchor="middle" font-family="Impact, 'Arial Black', Helvetica, sans-serif" font-weight="900" font-size="88" fill="url(#wh)">DON!!</text>
+  </g>
+  <text x="125" y="318" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="13" letter-spacing="3" fill="#ffffff" fill-opacity="0.75">YOUR TURN +1000</text>
+</svg>

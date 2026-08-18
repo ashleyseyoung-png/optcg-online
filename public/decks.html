@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="referrer" content="no-referrer" />
+<title>Deck Builder — Grand Line TCG</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<header class="topnav">
+  <div class="brand"><span class="skull">☠</span> Grand Line TCG</div>
+  <nav>
+    <a href="/index.html">Home</a>
+    <a href="/learn.html">Learn to Play</a>
+    <a href="/decks.html" class="active">Deck Builder</a>
+    <a href="/play.html">Play</a>
+  </nav>
+  <div class="user-box" id="user-box"></div>
+</header>
+
+<div class="container" style="padding-top:20px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    <h1 style="margin:6px 0;">Deck Builder</h1>
+    <div class="saved-decks-bar" style="display:flex; gap:8px; align-items:center;">
+      <select id="my-decks-select"><option value="">My decks…</option></select>
+      <select id="starter-select"><option value="">Load a starter deck…</option></select>
+      <button class="btn small secondary" id="new-deck-btn">+ New Deck</button>
+      <button class="btn small danger" id="delete-deck-btn" style="display:none;">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="builder-layout">
+  <div>
+    <div class="builder-toolbar">
+      <input id="search" placeholder="Search name, card ID (e.g. OP05-119), type or text…" />
+      <select id="filter-leader-color"><option value="">Only my Leader's colors</option><option value="all">All colors</option></select>
+      <select id="filter-type">
+        <option value="">All Types</option>
+        <option value="Leader">Leaders</option>
+        <option value="Character">Characters</option>
+        <option value="Event">Events</option>
+        <option value="Stage">Stages</option>
+      </select>
+      <select id="filter-cost">
+        <option value="">Any Cost</option>
+        <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+        <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+        <option value="6">6</option><option value="7">7</option><option value="8">8+</option>
+      </select>
+      <select id="filter-set"><option value="">All Sets</option></select>
+      <span id="grid-count" style="color:var(--paper-2); font-size:0.8rem; white-space:nowrap;"></span>
+    </div>
+    <div class="card-grid" id="card-grid"></div>
+  </div>
+
+  <div class="deck-panel card-panel">
+    <div class="field" style="margin-bottom:10px;">
+      <input id="deck-name" value="New Deck" style="width:100%; font-weight:700;" />
+    </div>
+    <div class="leader-slot" id="leader-slot">
+      <div style="color:var(--paper-2); font-size:0.85rem;">No Leader chosen — click a Leader card on the left.</div>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline;">
+      <span>Deck</span>
+      <span class="deck-count" id="deck-count">0 / 50</span>
+    </div>
+    <div class="deck-list" id="deck-list"></div>
+    <div class="legal-errors" id="legal-errors"></div>
+    <button class="btn gold" id="save-deck-btn" style="width:100%; margin-top:6px;">💾 Save Deck</button>
+    <button class="btn secondary" id="clear-deck-btn" style="width:100%; margin-top:8px;">Clear</button>
+  </div>
+</div>
+
+<footer>Card data & images sourced from public One Piece TCG card databases for reference use.</footer>
+
+<script src="/js/sfx.js"></script>
+<script src="/js/common.js"></script>
+<script src="/js/decks.js"></script>
+</body>
+</html>

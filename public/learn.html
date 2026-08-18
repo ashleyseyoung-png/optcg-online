@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Learn to Play — Grand Line TCG</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<header class="topnav">
+  <div class="brand"><span class="skull">☠</span> Grand Line TCG</div>
+  <nav>
+    <a href="/index.html">Home</a>
+    <a href="/learn.html" class="active">Learn to Play</a>
+    <a href="/decks.html">Deck Builder</a>
+    <a href="/play.html">Play</a>
+  </nav>
+  <div class="user-box" id="user-box"></div>
+</header>
+
+<div class="learn-layout">
+  <aside class="learn-toc">
+    <a href="#overview">Overview</a>
+    <a href="#cardtypes">Card Types</a>
+    <a href="#zones">The Board</a>
+    <a href="#setup">Game Setup</a>
+    <a href="#turn">Turn Structure</a>
+    <a href="#don">The DON!! System</a>
+    <a href="#battle">Battle</a>
+    <a href="#keywords">Keywords</a>
+    <a href="#deckbuilding">Deck Building</a>
+    <a href="#winning">Winning &amp; Losing</a>
+    <a href="#tips">Tips for New Captains</a>
+  </aside>
+
+  <main class="learn-content">
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>The <b>One Piece Card Game</b> is a 1-on-1 trading card game published by Bandai. Each player commands a <b>Leader</b> — a famous face from the series — and builds a 50-card deck around them, playing Character, Event, and Stage cards to whittle the opponent's <b>Life</b> down to zero.</p>
+      <p>A distinctive part of the game is the <b>DON!! deck</b>: a resource system (10 cards per player) that both pays for your cards and can be attached directly to your Leader or Characters for a power boost during your turn. Mastering DON!! timing is most of what separates a good player from a great one.</p>
+      <div class="callout">This simulator automates all the bookkeeping — shuffling, drawing, DON!!, life, and combat math — so you can focus on strategy. This page is a full rules reference, sourced from Bandai's official Comprehensive Rules. Prefer learning by doing? Start a <a href="/play.html"><b>Tutorial Match</b></a> — a real game against the bot with a coach explaining each step.</div>
+    </section>
+
+    <section id="cardtypes">
+      <h2>Card Types</h2>
+      <div class="keyword-grid">
+        <div class="keyword-chip"><b>Leader</b><br>One per deck, always in play face-up. Sets your deck's color(s) and starting Life total, and usually has its own ability.</div>
+        <div class="keyword-chip"><b>Character</b><br>The bulk of your deck. Played from hand for their cost, they sit in your Character Area (max 5 at once) and can attack or block.</div>
+        <div class="keyword-chip"><b>Event</b><br>One-time effects. Play them from hand during your Main Phase, or use their [Counter] text during a battle — then they go to the trash.</div>
+        <div class="keyword-chip"><b>Stage</b><br>Persistent field cards (only 1 at a time) that usually grant an ongoing or activatable effect.</div>
+      </div>
+      <p style="margin-top:16px">Every card also has a <b>color</b> (Red, Green, Blue, Purple, Black, or Yellow — some Leaders are two colors), a <b>cost</b>, and Characters/Leaders have <b>power</b>. Many Characters also print a <b>counter value</b> you can pay by discarding them from hand during a battle for a temporary power boost.</p>
+    </section>
+
+    <section id="zones">
+      <h2>The Board</h2>
+      <p>Each player's side of the table has these zones:</p>
+      <div class="zone-diagram">
+        <div class="zone-box"><b>Deck</b>50 cards, face-down, secret. Draw from the top.</div>
+        <div class="zone-box"><b>DON!! Deck</b>10 generic DON!! cards — a shared, open resource, not part of your 50-card deck.</div>
+        <div class="zone-box"><b>Hand</b>Cards you've drawn; secret from your opponent.</div>
+        <div class="zone-box"><b>Life Area</b>A face-down stack equal to your Leader's Life value. Secret to <i>both</i> players until revealed by damage.</div>
+        <div class="zone-box"><b>Cost Area</b>Where active DON!! cards wait to be spent or attached.</div>
+        <div class="zone-box"><b>Leader Area</b>Your Leader card, always face-up in play.</div>
+        <div class="zone-box"><b>Character Area</b>Up to 5 Character cards in play at once.</div>
+        <div class="zone-box"><b>Stage Area</b>1 Stage card at a time.</div>
+        <div class="zone-box"><b>Trash</b>Face-up discard pile for K.O.'d Characters and used Events.</div>
+      </div>
+    </section>
+
+    <section id="setup">
+      <h2>Game Setup</h2>
+      <ol>
+        <li>Both players shuffle their 50-card deck.</li>
+        <li>Take cards from the top of your deck equal to your Leader's Life value and place them face-down as your Life area (don't look at them!).</li>
+        <li>Draw a 5-card starting hand.</li>
+        <li><b>Mulligan (optional, once):</b> you may shuffle your starting hand back into your deck and draw a fresh 5.</li>
+        <li>Randomly determine who goes first (this simulator flips a coin for you). The first player skips their first Draw Phase and only gets <b>1</b> DON!! card on their first turn instead of 2 — a small tradeoff for having the first move.</li>
+      </ol>
+    </section>
+
+    <section id="turn">
+      <h2>Turn Structure</h2>
+      <p>Every turn moves through five phases, in order:</p>
+      <div class="phase-track">
+        <div class="phase-step"><div class="num">1</div><b>Refresh</b><br>All your rested cards become active again, and all DON!! you gave to your Leader/Characters return to your Cost Area.</div>
+        <div class="phase-step"><div class="num">2</div><b>Draw</b><br>Draw 1 card (skipped for the first player's very first turn).</div>
+        <div class="phase-step"><div class="num">3</div><b>DON!!</b><br>Add 2 DON!! cards (1 on the first player's turn 1) to your Cost Area, active.</div>
+        <div class="phase-step"><div class="num">4</div><b>Main</b><br>Play cards, attach DON!!, activate abilities, and attack — in any order, as many times as you can afford.</div>
+        <div class="phase-step"><div class="num">5</div><b>End</b><br>"End of turn" effects resolve, then priority passes to your opponent.</div>
+      </div>
+    </section>
+
+    <section id="don">
+      <h2>The DON!! System</h2>
+      <p>DON!! cards are the game's engine. Every turn you gain DON!! cards into your Cost Area, active side up. From there, during your Main Phase, you can:</p>
+      <ul>
+        <li><b>Pay for cards:</b> rest a number of active DON!! equal to a card's cost to play it.</li>
+        <li><b>Attach DON!! for power:</b> move an active DON!! card from your Cost Area underneath your Leader or a Character. Each attached DON!! grants <b>+1000 power</b> for the rest of <i>your</i> turn. At the start of your next turn (Refresh Phase) all given DON!! return to your Cost Area, active — so attaching is a per-turn decision, not a permanent buff.</li>
+      </ul>
+      <p>Many cards also have a <b>[DON!! x1]</b> / <b>[DON!! x2]</b> style effect that only turns on while you have that many DON!! attached to that card — a big part of deckbuilding is deciding how aggressively to attach DON!! for stats versus holding it back to pay for more plays.</p>
+    </section>
+
+    <section id="battle">
+      <h2>Battle</h2>
+      <p>During your Main Phase you may attack with your Leader and/or any of your <i>active</i> Characters that aren't already rested (and don't have "summoning sickness" — see <a href="#keywords">Rush</a> below). A battle has four steps:</p>
+      <ol>
+        <li><b>Attack Step:</b> rest the attacking Leader/Character and declare a target — your opponent's Leader, or one of their <i>Rested</i> Characters. (Active Characters are normally safe from attack — that's what makes Blocker special.)</li>
+        <li><b>Block Step:</b> the defender may rest an <i>active</i> Character with <b>[Blocker]</b> to redirect a Leader attack onto it instead, even though it wasn't a legal target on its own.</li>
+        <li><b>Counter Step:</b> the defender may play <b>[Counter]</b> Events from hand, or discard Characters for their printed counter value, to boost the defending side's power for this battle only.</li>
+        <li><b>Damage Step:</b> compare power. If the attacker's power is <b>greater than or equal to</b> the defender's, the attacker wins: a Character target is K.O.'d (sent to the trash), or if the Leader was hit, the defender takes damage — the top card of their Life area moves to their hand (see Trigger below). If the attacker's power is lower, nothing happens; the attacking card just stays rested.</li>
+      </ol>
+    </section>
+
+    <section id="keywords">
+      <h2>Keywords</h2>
+      <div class="keyword-grid">
+        <div class="keyword-chip"><b>[Rush]</b><br>This Character can attack the same turn it's played, ignoring the usual "summoning sickness."</div>
+        <div class="keyword-chip"><b>[Blocker]</b><br>May rest itself during the Block Step to become the new target of an attack, protecting the original target.</div>
+        <div class="keyword-chip"><b>[Double Attack]</b><br>If this card wins a battle against the Leader, it deals 2 Life damage instead of 1.</div>
+        <div class="keyword-chip"><b>[Banish]</b><br>When this card deals Life damage, the revealed Life card is trashed instead of added to hand — its [Trigger] can't be used.</div>
+        <div class="keyword-chip"><b>[Trigger]</b><br>Printed on some cards. When one is revealed by taking damage, its owner may activate the printed Trigger effect instead of adding it to hand.</div>
+        <div class="keyword-chip"><b>[Counter]</b><br>Can be played from hand during the Counter Step (Events), or is a power value discardable from hand during a battle (Characters).</div>
+      </div>
+    </section>
+
+    <section id="deckbuilding">
+      <h2>Deck Building</h2>
+      <ul>
+        <li>Choose exactly <b>1 Leader</b> card. It sets the color(s) your deck can use.</li>
+        <li>Build a <b>50-card main deck</b> using only Character, Event, and Stage cards that share at least one color with your Leader.</li>
+        <li>No more than <b>4 copies</b> of any card with the same card number (alternate art printings of the same card still count together).</li>
+        <li>Your <b>DON!! deck</b> is a fixed set of 10 generic DON!! cards — you don't build it, it's the same for every deck.</li>
+      </ul>
+      <div class="callout">Head to the <a href="/decks.html">Deck Builder</a> to search the full card pool, filter by color/type/cost, and save decks to your account (or a guest session) with live legality checking.</div>
+    </section>
+
+    <section id="winning">
+      <h2>Winning &amp; Losing</h2>
+      <p>You <b>lose</b> the game immediately if either of these happens:</p>
+      <ul>
+        <li>Your Leader takes Life damage while you have <b>0 Life cards</b> remaining.</li>
+        <li>You're required to draw a card but your deck is empty.</li>
+      </ul>
+      <p>There's no separate "win" condition to track — just avoid both of the above longer than your opponent does.</p>
+    </section>
+
+    <section id="tips">
+      <h2>Tips for New Captains</h2>
+      <ul>
+        <li><b>Don't over-attach DON!!.</b> Power is great, but DON!! attached to a Character is DON!! you can't spend on new cards or your Leader's abilities that turn.</li>
+        <li><b>Watch your opponent's Life count.</b> Cards get much stronger ("if you have 2 or less Life cards…") as a player gets low — don't assume a losing board position is safe to press.</li>
+        <li><b>Blockers buy tempo, not always value.</b> Trading a 1-cost Blocker to save your Leader 5000 power of damage is usually worth it.</li>
+        <li><b>Count your outs before attacking.</b> If your opponent has open DON!! and cards in hand, assume they have a Counter or Blocker ready.</li>
+      </ul>
+      <div class="cta-row" style="margin-top: 24px;">
+        <a class="btn gold" href="/play.html">Start a Tutorial Match →</a>
+        <a class="btn secondary" href="/decks.html">Build Your First Deck</a>
+      </div>
+    </section>
+  </main>
+</div>
+
+<footer>
+  Rules summarized from Bandai's official One Piece Card Game Comprehensive Rules. This is an unofficial fan simulator.
+</footer>
+
+<script src="/js/sfx.js"></script>
+<script src="/js/common.js"></script>
+<script>
+  // highlight active TOC section on scroll
+  const sections = [...document.querySelectorAll('.learn-content section')];
+  const links = [...document.querySelectorAll('.learn-toc a')];
+  function onScroll() {
+    let current = sections[0];
+    for (const s of sections) if (s.getBoundingClientRect().top < 140) current = s;
+    links.forEach((l) => l.classList.toggle('active', l.getAttribute('href') === '#' + current.id));
+  }
+  document.addEventListener('scroll', onScroll);
+  onScroll();
+</script>
+</body>
+</html>

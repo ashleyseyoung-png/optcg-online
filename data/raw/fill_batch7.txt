@@ -1,0 +1,41 @@
+EB04-014|Kouzuki Sukiyaki|Character|Green|3|0|0|-|Wisdom|C|Land of Wano Kouzuki Clan|[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [Activate: Main] [Once Per Turn] Give up to 1 rested DON!! card to your {Land of Wano} type Leader.
+EB04-051|Emet|Character|Yellow|8|7000|0|-|Strike|C|Egghead|This Character cannot attack unless there is a Character with 12000 base power or more. [Trigger] Give all of your opponent's Characters -3000 power during this turn. Then, if you have 0 Life cards, play this card.
+OP01-062|Crocodile (062) (Parallel)|Leader|Blue Purple|-|5000|-|4|Special|L|Baroque Works The Seven Warlords of the Sea|[DON!! x1] When you activate an Event, you may draw 1 card if you have 4 or less cards in your hand and haven't drawn a card using this Leader's effect during this turn.
+OP01-062|Crocodile (062)|Leader|Blue Purple|-|5000|-|4|Special|L|Baroque Works The Seven Warlords of the Sea|[DON!! x1] When you activate an Event, you may draw 1 card if you have 4 or less cards in your hand and haven't drawn a card using this Leader's effect during this turn.
+OP02-080|Dobon|Character|Purple|2|4000|1000|-|Strike|C|Animal Kingdom Pirates SMILE|-
+OP03-022|Arlong|Leader|Green Yellow|-|5000|-|4|Slash|L|Fish-Man Arlong Pirates East Blue|[DON!! x2] [When Attacking (1) (You may rest the specified number of DON!! cards in your cost area.): Play up to 1 Character card with a cost of 4 or less and a [Trigger] from your hand.
+OP03-022|Arlong (Alternate Art)|Leader|Green Yellow|-|5000|-|4|Slash|L|Fish-Man Arlong Pirates East Blue|[DON!! x2] [When Attacking (1) (You may rest the specified number of DON!! cards in your cost area.): Play up to 1 Character card with a cost of 4 or less and a [Trigger] from your hand.
+OP04-025|Giolla|Character|Green|4|4000|1000|-|Special|C|Donquixote Pirates|[On Your Opponent's Attack] (2) (You may rest the specified number of DON!! cards in your cost area.): Rest up to 1 of your opponent's Characters with a cost of 4 or less.
+OP04-062|Bananagator|Character|Purple|5|7000|1000|-|Strike|C|Animal|-
+OP04-106|Charlotte Bavarois|Character|Yellow|3|4000|1000|-|Strike|C|Big Mom Pirates|[DON!! x1] If you have less Life cards than your opponent, this Character gains +1000 power. [Trigger] You may trash 1 card from your hand: Play this card.
+OP05-049|Haccha|Character|Blue|6|7000|0|-|Strike|UC|Animal Kingdom Pirates Giant|[DON!! x1][When Attacking] Return up to 1 Character with a cost of 3 or less to the owner's hand.
+OP06-014|Ratchet|Character|Red|1|0|1000|-|Wisdom|C|FILM Mecha Island|[On Your Opponent's Attack] You may trash any number of [FILM] type cards from your hand. Your Leader or 1 of your Characters gains +1000 power during this battle for every card trashed.
+OP06-049|Sengoku|Character|Blue|5|7000|1000|-|Strike|C|Navy|-
+OP06-049|Sengoku - OP06-049 (Pirate Foil)|Character|Blue|5|7000|1000|-|Strike|C|Navy|-
+OP06-049|Sengoku - OP06-049 (Reprint)|Character|Blue|5|7000|1000|-|Strike|C|Navy|Disclaimer: This card was reprinted from the original set with changes to the copyright information (Note: the original print did not include "EN" at the end of the copyright).
+OP06-108|Tenguyama Hitetsu|Character|Yellow|1|2000|1000|-|Wisdom|C|Land of Wano Kouzuki Clan|[Trigger] Up to 1 of your [Land of Wano] type Leader or Character cards gains +2000 power during this turn.
+OP07-024|Koala|Character|Green|3|0|1000|-|Wisdom|C|Foolshout Island|[On Your Opponent's Attack] You may rest this Character: Up to 1 of your [Fish-Man] type Characters with a cost of 5 or less gains [Blocker] during this turn. (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)
+OP07-087|Baskerville|Character|Black|3|3000|2000|-|Slash|C|World Government|[Your Turn] If your opponent has a Character with a cost of 0, this Character gains +3000 power.
+OP08-056|Moby Dick|Stage|Blue|2|-|0|-|NULL|C|Whitebeard Pirates|[Your Turn] [Once Per Turn] When your Character with a type including "Whitebeard Piratess" is removed from the field by an effect, draw 1 card. Then, place 1 card from your hand at the top or bottom of your deck. [Trigger] Play this card.
+OP09-038|Rob Lucci (038)|Character|Green|4|6000|1000|-|Strike|C|CP9 ODYSSEY|-
+OP09-115|Ice Block Partisan|Event|Yellow|1|-|-|-|-|UC|Navy|[Main] K.O. up to 1 of your opponent's Characters with a cost of 3 or less and a [Trigger]. [Trigger] Draw 1 card.
+OP10-054|Blue Gilly|Character|Blue|3|5000|1000|-|Strike|C|Dressrosa|-
+OP11-002|Ain|Character|Red|3|4000|1000|-|Special|C|FILM Neo Navy|[On Play] Give up to 1 of your opponent's Characters 1000 power during this turn. Then, K.O. up to 1 of your opponent's Characters with 0 power or less.
+OP11-057|Pedro|Character|Blue|1|1000|1000|-|Slash|C|Minks|If you have 4 or less cards in your hand, this Character gains [Blocker]. (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)
+OP11-090|Briscola|Character|Black|2|2000|1000|-|Strike|C|Animal Kingdom Pirates SMILE|[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)
+OP12-035|Morgan|Character|Green|3|5000|1000|-|Slash|C|Navy East Blue|-
+OP12-082|Issho|Character|Black|8|10000|1000|-|Slash|C|Navy Dressrosa|-
+OP12-111|Baby 5 (111)|Character|Yellow|2|4000|1000|-|Special|C|Donquixote Pirates|-
+OP13-044|Curiel|Character|Blue|3|4000|0|-|Ranged|C|Whitebeard Pirates|[When Attacking] Give up to 1 rested DON!! card to your Leader with a type including "Whitebeard Pirates" or 1 Character with a type including "Whitebeard Pirates". [On K.O.] Draw 1 card.
+OP13-070|Napoleon|Character|Purple|5|7000|1000|-|Slash|C|Big Mom Pirates Homies|-
+OP13-106|Conney|Character|Yellow|1|1000|1000|-|Special|C|Bonney Pirates|[Opponent's Turn] When a [Trigger] activates, this Character gains [Blocker] during this turn. [Trigger] Play this card.
+OP14-025|Kuro|Character|Green|7|8000|0|-|Slash|C|East Blue Black Cat Pirates|[On Play] If your Leader is [Kuro], play up to 1 {East Blue} type Character card with a cost of 6 or less from your hand.
+OP14-053|Vista|Character|Blue|3|4000|1000|-|Slash|C|Whitebeard Pirates|[Blocker] [Opponent's Turn] If you have 7 or less cards in your hand, this Character's base power becomes the same as your Leader's base power.
+OP14-081|Spider Mice|Character|Black|1|1000|1000|-|Special|C|Thriller Bark Pirates|[On Play] Trash 3 cards from the top of your deck. [On K.O.] K.O. up to 1 of your opponent's Characters with a base cost of 1.
+OP15-005|Cabaji|Character|Red|2|3000|1000|-|Slash|C|Buggy Pirates East Blue|[When Attacking] If your opponent has any DON!! cards given, this Character gains +2000 power during this turn.
+OP15-030|Hyouzou|Character|Green|5|6000|2000|-|Slash|UC|Merfolk Fish-Man Island|-
+OP15-045|Sai|Character|Blue|5|6000|1000|-|Slash|UC|Happosui Army Dressrosa|[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On Play] You may trash 1 Event from your hand: Draw 2 cards.
+OP15-069|Nola|Character|Purple|1|2000|2000|-|Strike|UC|Animal Sky Island|If your Character with 7000 base power or less would be removed from the field by your opponent's effect, you may return 1 DON!! card from your field to your DON!! deck instead.
+OP15-100|Kamakiri|Character|Yellow|5|6000|1000|-|Slash|C|Sky Island Shandian Warrior|[On Play] You may trash this Character and add 1 card from the top of your Life cards to your hand: K.O. up to 1 of your opponent's Characters with a cost of 6 or less.
+OP16-064|Koby|Character|Purple|1|2000|1000|-|Strike|R|Navy|[On Play] Look at 5 cards from the top of your deck; reveal up to 1 {Navy} type card other than [Koby] and add it to your hand. Then, place the rest at the bottom of your deck in any order.
+OP16-097|Yamato (097)|Character|Black|8|8000|0|-|Strike|R|Land of Wano|[On Play] Add up to 1 {Land of Wano} type Character card with a cost of 6 or less from your trash to your hand. Then, play up to 1 Character card with a cost of 2 or less from your hand.

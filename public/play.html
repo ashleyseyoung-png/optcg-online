@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Play — Grand Line TCG</title>
+<link rel="stylesheet" href="/css/style.css" />
+<style>
+  .lobby-grid { grid-template-columns: 1fr 1fr 1fr; max-width: 1180px; }
+  .lobby-grid .card-panel h2 { font-size: 1.35rem; }
+  .lobby-grid .card-panel p.hint { color: var(--paper-2); font-size: 0.85rem; margin: 0 0 14px; min-height: 3.2em; }
+  .deck-pick label { font-size:0.8rem; color:var(--paper-2); display:block; margin-bottom:4px; }
+  .deck-pick select { width:100%; }
+  @media (max-width: 1000px) { .lobby-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="topnav">
+  <div class="brand"><span class="skull">☠</span> Grand Line TCG</div>
+  <nav>
+    <a href="/index.html">Home</a>
+    <a href="/learn.html">Learn to Play</a>
+    <a href="/decks.html">Deck Builder</a>
+    <a href="/play.html" class="active">Play</a>
+  </nav>
+  <div class="user-box" id="user-box"></div>
+</header>
+
+<div class="container" style="padding-top: 20px;">
+  <h1 style="text-align:center;">Play</h1>
+  <p style="text-align:center; color:var(--paper-2); max-width:600px; margin:0 auto;">Practice against the bot, learn with a guided tutorial match, or play a friend online. You can use one of your saved decks or grab a ready-made starter deck — no building required.</p>
+</div>
+
+<div class="container" id="gate" style="display:none; max-width:560px; margin-top:30px;">
+  <div class="card-panel" style="text-align:center;">
+    <h2 style="margin-top:0;">Who's playing?</h2>
+    <p style="color:var(--paper-2);">Make a free account to save decks between sessions, or jump straight in as a guest with a random pirate name.</p>
+    <div class="cta-row" style="margin-top:16px;">
+      <button class="btn gold" id="gate-guest">Play as Guest</button>
+      <button class="btn secondary" id="gate-signin">Sign in / Register</button>
+    </div>
+  </div>
+</div>
+
+<div class="lobby-grid" id="lobby">
+  <div class="card-panel">
+    <h2 style="margin-top:0;">🎓 Tutorial Match</h2>
+    <p class="hint">Play against the bot with a live coach that explains each phase, what you can click, and why. Best first stop if you're new.</p>
+    <div class="deck-pick" style="margin-bottom:12px;">
+      <label>Your deck</label>
+      <select id="tutorial-deck-select"></select>
+    </div>
+    <button class="btn gold" id="tutorial-btn" style="width:100%;">Start Tutorial Match</button>
+  </div>
+
+  <div class="card-panel">
+    <h2 style="margin-top:0;">🤖 Play vs Bot</h2>
+    <p class="hint">A quick practice game against Captain Bot. It plays a random starter deck and takes its turns on its own.</p>
+    <div class="deck-pick" style="margin-bottom:12px;">
+      <label>Your deck</label>
+      <select id="bot-deck-select"></select>
+    </div>
+    <button class="btn" id="bot-btn" style="width:100%;">Play vs Bot</button>
+  </div>
+
+  <div class="card-panel">
+    <h2 style="margin-top:0;">⚔️ Play a Friend</h2>
+    <p class="hint">Create a room and send the 5-letter code, or enter a friend's code to join their table.</p>
+    <div class="deck-pick" style="margin-bottom:12px;">
+      <label>Your deck</label>
+      <select id="friend-deck-select"></select>
+    </div>
+    <button class="btn" id="create-room-btn" style="width:100%;">Create Room</button>
+    <div id="create-result" style="margin-top:12px; display:none;">
+      <div style="text-align:center; color:var(--paper-2); font-size:0.85rem;">Send this code to your friend:</div>
+      <div class="lobby-code" id="room-code-display"></div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn secondary small" id="copy-code-btn" style="flex:1;">Copy Code</button>
+        <button class="btn gold small" id="enter-room-btn" style="flex:1;">Enter Table →</button>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; margin:14px 0 10px; color:var(--grey); font-size:0.8rem;">
+      <span style="flex:1; height:1px; background:#3a2f27;"></span> or join <span style="flex:1; height:1px; background:#3a2f27;"></span>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <input id="join-code-input" placeholder="CODE" maxlength="5" style="flex:1; text-transform:uppercase; letter-spacing:3px; text-align:center; font-family: var(--font-display); font-weight:700;" />
+      <button class="btn secondary" id="join-room-btn">Join</button>
+    </div>
+  </div>
+</div>
+
+<footer>Card data & images sourced from public One Piece TCG card databases for reference use.</footer>
+
+<script src="/js/sfx.js"></script>
+<script src="/js/common.js"></script>
+<script src="/js/play.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "optcg-online",
+  "version": "1.0.0",
+  "description": "One Piece Card Game online simulator — learn, build decks, play with friends.",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "share": "node share.js"
+  },
+  "dependencies": {},
+  "comment": "Zero external dependencies on purpose: uses Node's built-in http server, node:sqlite, node:crypto, and a hand-rolled WebSocket server (server/ws-server.js) so `npm install` is a no-op and deployment is dead simple."
+}
