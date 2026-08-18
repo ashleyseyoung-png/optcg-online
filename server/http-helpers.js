@@ -134,10 +134,22 @@ function serveStatic(rootDir) {
     if (!filePath.startsWith(path.normalize(rootDir))) {
       res.writeHead(403); res.end('Forbidden'); return true;
     }
-    if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) return false;
+    if (!fs.existsSync(filePath)) return false;
+    const stat = fs.statSync(filePath);
+    if (stat.isDirectory()) return false;
     const ext = path.extname(filePath);
     const mime = MIME[ext] || 'application/octet-stream';
-    res.writeHead(200, { 'Content-Type': mime });
+    // Always revalidate (so a new deploy shows up on the next page load, no hard-refresh needed),
+    // but answer 304 when the browser's copy is still current.
+    const lastMod = stat.mtime.toUTCString();
+    const ims = req.headers['if-modified-since'];
+    if (ims && new Date(ims).getTime() >= Math.floor(stat.mtimeMs / 1000) * 1000) {
+      res.writeHead(304, { 'Cache-Control': 'no-cache', 'Last-Modified': lastMod });
+      res.end();
+      return true;
+    }
+    res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'no-cache', 'Last-Modified': lastMod, 'Content-Length': stat.size });
+    if (req.method === 'HEAD') { res.end(); return true; }
     fs.createReadStream(filePath).pipe(res);
     return true;
   };
