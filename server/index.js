@@ -56,4 +56,8 @@ wss.on('connection', (socket, req) => {
 server.listen(PORT, () => {
   console.log(`Grand Line TCG is running → http://localhost:${PORT}`);
   console.log(`(Want a link friends can open? Stop this and run: npm run share)`);
+  // Card art relay cache + once-a-day background refresh of the card list (new sets / alt arts).
+  const { DATA_DIR } = require('./db');
+  cards.setImageCacheDir(DATA_DIR);
+  cards.scheduleCardSync(DATA_DIR);
 });

@@ -97,26 +97,88 @@ async function requireUser() {
 }
 
 // ---------- card art / tooltip helpers (shared by deck builder + board) ----------
-function cardImgUrl(card) { return card.image; }
-
-// If a hotlinked card image fails to load, swap in a text tile with the card's name.
-// Reads the name from the <img alt> so it's safe for names with quotes/apostrophes
-// (e.g. Kin'emon) — never interpolate names into inline JS. Failed URLs are remembered
-// so re-renders draw the tile directly instead of re-requesting (and flickering).
-const FAILED_IMGS = new Set();
+// ---- Card art -------------------------------------------------------------------------
+// Every card has up to three places its picture can come from:
+//   1. card.image   — optcgapi.com (primary)
+//   2. card.image2  — the official Bandai card list
+//   3. /api/card-image/:id — our own server fetches + caches it (works even when a player's
+//      network/ISP/browser blocks the art hosts, which is why a friend might see no pictures)
+// The <img> walks that chain on error; the first source that works is remembered per card so
+// re-renders go straight to it, and only if all three fail do we draw a text tile.
+const IMG_STAGE = new Map(); // card id -> index of the source known to work (-1 = none work)
+function cardImgSources(card) {
+  const srcs = [card.image];
+  if (card.image2 && card.image2 !== card.image) srcs.push(card.image2);
+  srcs.push('/api/card-image/' + encodeURIComponent(card.id));
+  return srcs.filter(Boolean);
+}
+// Best URL to try first for this card right now (used by the few places that set <img src> directly).
+function cardImgUrl(card) {
+  const srcs = cardImgSources(card);
+  const stage = IMG_STAGE.get(card.id);
+  return srcs[stage > 0 && stage < srcs.length ? stage : 0];
+}
+const FAILED_IMGS = new Set(); // URLs known to be dead (kept for older call sites)
 function cardImgFallback(img) {
   FAILED_IMGS.add(img.getAttribute('src'));
+  const cid = img.dataset.cid;
+  const next = (img.dataset.next || '').split('|').filter(Boolean);
+  if (next.length) {
+    img.dataset.next = next.slice(1).join('|');
+    img.dataset.stage = String((parseInt(img.dataset.stage || '0', 10) || 0) + 1);
+    img.src = next[0];
+    return;
+  }
+  if (cid) IMG_STAGE.set(cid, -1);
   const d = document.createElement('div');
   d.className = 'fallback';
   d.textContent = img.getAttribute('alt') || '?';
   img.replaceWith(d);
 }
-// <img> for a card, or the text tile straight away if that art is known to be unavailable.
+function cardImgLoaded(img) {
+  const cid = img.dataset.cid;
+  const stage = parseInt(img.dataset.stage || '0', 10) || 0;
+  if (cid && stage > 0) IMG_STAGE.set(cid, stage);
+}
+// <img> for a card (with the fallback chain wired), or the text tile straight away if every
+// source is known to be unavailable. Reads the name from <img alt> so it's safe for names
+// with quotes/apostrophes (Kin'emon) — never interpolate names into inline JS.
 function cardImgHtml(card, extraAttrs = '') {
-  const url = cardImgUrl(card);
+  const srcs = cardImgSources(card);
   const name = escapeHtml(card.name);
-  if (FAILED_IMGS.has(url)) return `<div class="fallback">${name}</div>`;
-  return `<img src="${url}" alt="${name}" draggable="false" ${extraAttrs} onerror="cardImgFallback(this)" />`;
+  let stage = IMG_STAGE.get(card.id) ?? 0;
+  if (stage < 0 || stage >= srcs.length) return `<div class="fallback">${name}</div>`;
+  const rest = srcs.slice(stage + 1).join('|');
+  return `<img src="${srcs[stage]}" alt="${name}" draggable="false" data-cid="${escapeHtml(card.id)}" data-stage="${stage}" data-next="${escapeHtml(rest)}" ${extraAttrs} onerror="cardImgFallback(this)" onload="cardImgLoaded(this)" />`;
+}
+// For an <img> that already exists (e.g. the big preview): point it at a card, walking the chain.
+function setCardImg(img, card) {
+  if (!card) { img.removeAttribute('src'); return; }
+  const srcs = cardImgSources(card);
+  let stage = IMG_STAGE.get(card.id) ?? 0;
+  if (stage < 0 || stage >= srcs.length) stage = 0;
+  img.dataset.cid = card.id; img.dataset.stage = String(stage); img.dataset.next = srcs.slice(stage + 1).join('|');
+  img.alt = card.name;
+  img.onerror = () => { const cid = img.dataset.cid; const next = (img.dataset.next || '').split('|').filter(Boolean); if (next.length) { img.dataset.next = next.slice(1).join('|'); img.dataset.stage = String((+img.dataset.stage || 0) + 1); img.src = next[0]; } else { if (cid) IMG_STAGE.set(cid, -1); img.removeAttribute('src'); } };
+  img.onload = () => cardImgLoaded(img);
+  if (img.getAttribute('src') !== srcs[stage]) img.src = srcs[stage];
+}
+
+// "Alternate Art" -> "ALT", "Parallel · Manga" -> "MANGA", "Reprint · PRB-01" -> "PRB-01", promos -> "PROMO"...
+function variantShort(v) {
+  if (!v) return '';
+  const s = v.toLowerCase();
+  if (s.includes('manga')) return 'MANGA';
+  if (/\bspr\b/.test(s)) return 'SPR';
+  if (/\bsp\b/.test(s)) return 'SP';
+  if (s.includes('box topper')) return 'TOPPER';
+  if (s.includes('full art')) return 'FULL ART';
+  if (s.includes('wanted')) return 'WANTED';
+  if (s.includes('treasure')) return 'TR';
+  if (s.includes('reprint')) { const m = v.match(/PRB-?\d+/i); return m ? m[0].toUpperCase() : 'REPRINT'; }
+  if (s.includes('parallel') || s.includes('alternate')) return 'ALT';
+  if (s.includes('winner') || s.includes('finalist') || s.includes('champion')) return 'WINNER';
+  return 'PROMO';
 }
 
 function cardColorClass(card) { return 'color-' + (card.colors && card.colors[0] || 'Red'); }
@@ -127,6 +189,7 @@ function miniCardHtml(card, opts = {}) {
     <div class="mini-card ${cardColorClass(card)} ${opts.extraClass || ''}" data-card-id="${card.id}">
       ${cost !== '' ? `<span class="badge-cost">${cost}</span>` : ''}
       ${opts.count ? `<span class="count-badge">x${opts.count}</span>` : ''}
+      ${card.variant ? `<span class="badge-variant" title="${escapeHtml(card.variant)}">${escapeHtml(variantShort(card.variant))}</span>` : ''}
       ${cardImgHtml(card, 'loading="lazy"')}
       ${card.power !== null && card.power !== undefined ? `<span class="badge-power">${card.power}</span>` : ''}
       <div class="name-tag">${escapeHtml(card.name)}</div>

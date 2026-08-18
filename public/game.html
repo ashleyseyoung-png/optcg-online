@@ -52,15 +52,21 @@
       <div class="side-body">
         <div class="game-log" id="game-log"></div>
         <div class="toolbox-panel" id="toolbox-panel" style="display:none;">
-          <div class="tb-note">For card effects the game can't resolve automatically: apply the printed effect by hand. Click a card on the table to target it.</div>
+          <div class="tb-note">For card effects the game can't resolve automatically: apply the printed effect by hand. Everything here follows the rules — DON!! can only move between your DON!! deck, cost area and cards (10 total), draws come from your deck, and power changes last this turn.</div>
+          <div class="tb-group">Cards</div>
           <div class="tb-row">
-            <button class="pill sm" data-tb="draw">Draw 1</button>
-            <button class="pill sm" data-tb="donActivePlus">+1 Active DON</button>
-            <button class="pill sm" data-tb="donActiveMinus">−1 Active DON</button>
-            <button class="pill sm" data-tb="donDeckPlus">+1 DON Deck</button>
-            <button class="pill sm" data-tb="donDeckMinus">−1 DON Deck</button>
-            <button class="pill sm" data-tb="discardHand">Discard from Hand</button>
+            <button class="pill sm" data-tb="draw" title="Draw 1 card from your deck (only when an effect says to)">Draw 1</button>
+            <button class="pill sm" data-tb="discardHand" title="Trash a card from your hand (e.g. to pay a cost)">Trash from Hand</button>
           </div>
+          <div class="tb-group">DON!!</div>
+          <div class="tb-row">
+            <button class="pill sm" data-tb="donFromDeckActive" title='"Add 1 DON!! card from your DON!! deck and set it as active"'>DON!! deck → Active</button>
+            <button class="pill sm" data-tb="donFromDeckRested" title='"Add 1 DON!! card from your DON!! deck and rest it"'>DON!! deck → Rested</button>
+            <button class="pill sm" data-tb="donToDeck" title='"Return 1 DON!! card from your field to your DON!! deck"'>Cost area → DON!! deck</button>
+            <button class="pill sm" data-tb="donRest" title="Rest 1 active DON!! (pay a (1) cost the game didn't charge)">Rest 1 DON!!</button>
+            <button class="pill sm" data-tb="donActivate" title="Set 1 rested DON!! active">Activate 1 DON!!</button>
+          </div>
+          <div class="tb-group">Selected card</div>
           <div id="tb-target-info" class="tb-target-info"></div>
           <div class="tb-row" id="tb-target-actions"></div>
         </div>

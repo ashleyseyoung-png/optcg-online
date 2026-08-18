@@ -49,7 +49,9 @@ This uses **Render's free tier** and needs a **GitHub** account (free). Everythi
 3. Pick the repository you just published → **Connect** → **Apply**.
 4. Wait a minute or two. Render gives you a URL like `https://grand-line-tcg-xxxx.onrender.com`. Send that to your friends.
 
-Later updates: whenever you unzip a new version of the app over the folder, open GitHub Desktop → Commit → **Push**. Render redeploys automatically.
+Later updates: whenever you unzip a new version of the app over the folder, open GitHub Desktop → Commit → **Push**. Render redeploys automatically. (Each deploy also refreshes the card list from the public card database, so brand-new sets and alt arts appear without you doing anything.)
+
+**Friend can't see card pictures?** Card art is loaded from two public card databases, and some networks/ISPs/browser extensions block those hosts. The app now falls back to fetching the art through your own site (`/api/card-image/...`), so everyone sees the same pictures — the first load of each card is a little slower for them, then it's cached on the server.
 
 The one catch of the free tier: it "sleeps" after 15 minutes with nobody on it (first visitor waits ~30–60 s for it to wake up), and because the free tier has no persistent disk, accounts/decks made on the site are wiped when it redeploys or restarts. Fine for testing with friends — everyone can just use starter decks / guest mode. If that gets annoying, upgrading that same Render service to **Starter ($7/mo)** and adding a Disk (mount `/data`, then set the `DATA_DIR=/data` variable — it's already there commented-out in `render.yaml`) makes everything persist.
 

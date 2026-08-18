@@ -57,7 +57,7 @@ function populateSetFilter() {
 }
 
 function wireUi() {
-  ['search', 'filter-leader-color', 'filter-type', 'filter-cost', 'filter-set'].forEach((id) => {
+  ['search', 'filter-leader-color', 'filter-type', 'filter-cost', 'filter-set', 'filter-art'].forEach((id) => {
     document.getElementById(id).addEventListener('input', renderGrid);
     document.getElementById(id).addEventListener('change', renderGrid);
   });
@@ -115,9 +115,22 @@ function onCardClick(id) {
   changeCount(id, 1);
 }
 
+// Copies are counted per card NUMBER: an alt art / parallel / promo is the same card as its
+// regular print, so all art versions of e.g. OP01-024 share the 4-copy limit.
+function baseOf(id) { const c = getCard(id); return (c && c.baseId) || id; }
+function baseCount(baseId) {
+  let n = 0;
+  for (const [cid, cnt] of Object.entries(deck.cards)) if (baseOf(cid) === baseId) n += cnt;
+  return n;
+}
 function changeCount(id, delta) {
   const current = deck.cards[id] || 0;
-  const next = Math.max(0, Math.min(MAX_COPIES, current + delta));
+  const others = baseCount(baseOf(id)) - current; // copies of the same card in other art versions
+  const next = Math.max(0, Math.min(MAX_COPIES - others, current + delta));
+  if (next === current && delta > 0) {
+    const c = getCard(id);
+    toast(`${c ? c.name : id}: max ${MAX_COPIES} copies (counting all art versions).`, 'warn');
+  }
   if (window.SFX) SFX.play(next > current ? 'place' : next < current ? 'trash' : 'error');
   if (next === 0) delete deck.cards[id]; else deck.cards[id] = next;
   renderDeckPanel(); refreshGridBadges();
@@ -136,12 +149,15 @@ function renderGrid() {
   const typeFilter = document.getElementById('filter-type').value;
   const costFilter = document.getElementById('filter-cost').value;
   const setFilter = document.getElementById('filter-set').value;
+  const artFilter = (document.getElementById('filter-art') || {}).value || '';
   const leader = deck.leaderId ? getCard(deck.leaderId) : null;
 
   gridList = ALL_CARDS.filter((c) => {
-    if (q && !(c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q) || (c.text || '').toLowerCase().includes(q) || (c.types || []).some((t) => t.toLowerCase().includes(q)))) return false;
+    if (artFilter === 'base' && c.variant) return false;
+    if (artFilter === 'alt' && !c.variant) return false;
+    if (q && !(c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q) || (c.variant || '').toLowerCase().includes(q) || (c.printSet || '').toLowerCase().includes(q) || (c.text || '').toLowerCase().includes(q) || (c.types || []).some((t) => t.toLowerCase().includes(q)))) return false;
     if (typeFilter && c.type !== typeFilter) return false;
-    if (setFilter && c.set !== setFilter) return false;
+    if (setFilter && c.set !== setFilter && c.printSet !== setFilter) return false;
     if (costFilter) {
       const cost = c.cost ?? -1;
       if (costFilter === '8') { if (cost < 8) return false; } else if (cost !== parseInt(costFilter, 10)) return false;
@@ -208,8 +224,8 @@ function renderDeckPanel() {
   const leaderSlot = document.getElementById('leader-slot');
   const leader = deck.leaderId ? getCard(deck.leaderId) : null;
   leaderSlot.innerHTML = leader
-    ? `<img src="${cardImgUrl(leader)}" onerror="this.style.display='none'" />
-       <div><b>${escapeHtml(leader.name)}</b><br><span style="color:var(--paper-2); font-size:0.8rem;">${leader.colors.join('/')} · Life ${leader.life} · ${leader.power} power</span></div>`
+    ? `${cardImgHtml(leader)}
+       <div><b>${escapeHtml(leader.name)}</b><br><span style="color:var(--paper-2); font-size:0.8rem;">${leader.colors.join('/')} · Life ${leader.life} · ${leader.power} power${leader.variant ? ' · ' + escapeHtml(leader.variant) : ''}</span></div>`
     : `<div style="color:var(--paper-2); font-size:0.85rem;">No Leader chosen — click a Leader card on the left.</div>`;
 
   const total = deckTotal();
@@ -224,7 +240,7 @@ function renderDeckPanel() {
   document.getElementById('deck-list').innerHTML = rows.map(([id, count]) => {
     const c = getCard(id);
     return `<div class="deck-list-row">
-      <span>${escapeHtml(c.name)} <span style="color:var(--grey)">(${c.cost ?? '-'})</span></span>
+      <span>${escapeHtml(c.name)} <span style="color:var(--grey)">(${c.cost ?? '-'})</span>${c.variant ? ` <span class="row-variant" title="${escapeHtml(c.variant)}">${escapeHtml(variantShort(c.variant))}</span>` : ''}</span>
       <span class="qty-controls">
         <button data-dec="${id}">−</button>
         <b>${count}</b>
@@ -240,10 +256,16 @@ function validateLocal() {
   const errors = [];
   const leader = deck.leaderId ? getCard(deck.leaderId) : null;
   if (!leader) errors.push('Choose a Leader.');
+  const perBase = new Map();
   for (const [id, count] of Object.entries(deck.cards)) {
     const c = getCard(id);
-    if (count > MAX_COPIES) errors.push(`${c.name}: max ${MAX_COPIES} copies.`);
+    if (!c) { errors.push(`Unknown card ${id}.`); continue; }
+    const b = baseOf(id);
+    perBase.set(b, (perBase.get(b) || 0) + count);
     if (leader && !c.colors.some((col) => leader.colors.includes(col))) errors.push(`${c.name} doesn't match your Leader's color.`);
+  }
+  for (const [b, n] of perBase) {
+    if (n > MAX_COPIES) { const c = getCard(b) || getCard(Object.keys(deck.cards).find((id) => baseOf(id) === b)); errors.push(`${c ? c.name : b} (${b}): max ${MAX_COPIES} copies counting all art versions (has ${n}).`); }
   }
   const total = deckTotal();
   if (total !== DECK_SIZE) errors.push(`Deck must have exactly ${DECK_SIZE} cards (currently ${total}).`);

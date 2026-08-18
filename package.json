@@ -10,7 +10,8 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node server/index.js",
-    "share": "node share.js"
+    "share": "node share.js",
+    "sync-cards": "node scripts/sync-cards.js"
   },
   "dependencies": {},
   "comment": "Zero external dependencies on purpose: uses Node's built-in http server, node:sqlite, node:crypto, and a hand-rolled WebSocket server (server/ws-server.js) so `npm install` is a no-op and deployment is dead simple."

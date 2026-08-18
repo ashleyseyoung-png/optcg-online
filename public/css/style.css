@@ -146,6 +146,8 @@ footer { text-align: center; padding: 30px; color: rgba(255,255,255,0.5); font-s
 .mini-card img { width: 100%; display: block; aspect-ratio: 5/7; object-fit: cover; background: #2a2440; }
 .mini-card .fallback { aspect-ratio: 5/7; display: flex; align-items: center; justify-content: center; padding: 8px; text-align: center; font-size: 0.74rem; font-weight: 800; color: #fff; background: linear-gradient(160deg,#4a3f7a,#2a2440); }
 .mini-card .badge-cost { position: absolute; top: 6px; left: 6px; width: 26px; height: 26px; border-radius: 50%; background: var(--navy); border: 2px solid #fff; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.8rem; }
+.deck-list-row .row-variant { display:inline-block; margin-left:4px; padding: 0 6px; border-radius: 999px; background: linear-gradient(135deg, var(--sun), #ff9f43); color: #2a1f63; font-size: 0.6rem; font-weight: 900; vertical-align: middle; }
+.mini-card .badge-variant { position: absolute; top: 6px; right: 6px; max-width: calc(100% - 44px); background: linear-gradient(135deg, var(--sun), #ff9f43); color: #2a1f63; font-size: 0.6rem; padding: 2px 8px; border-radius: 999px; font-weight: 900; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 2px 6px rgba(0,0,0,0.35); }
 .mini-card .badge-power { position: absolute; bottom: 30px; right: 6px; background: var(--navy); border: 2px solid #fff; color: #fff; font-size: 0.7rem; padding: 1px 8px; border-radius: 999px; font-weight: 900; }
 .mini-card .name-tag { padding: 5px 8px; font-size: 0.7rem; font-weight: 800; text-align: center; background: var(--navy); color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mini-card.color-Red { border-color: var(--color-red); }
@@ -183,6 +185,7 @@ footer { text-align: center; padding: 30px; color: rgba(255,255,255,0.5); font-s
 .deck-panel { position: sticky; top: 90px; }
 .deck-panel .leader-slot { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; padding: 10px; background: rgba(255,255,255,0.08); border-radius: 18px; border: 2.5px solid rgba(255,255,255,0.15); }
 .deck-panel .leader-slot img { width: 60px; border-radius: 8px; border: 2px solid #fff; }
+.deck-panel .leader-slot .fallback { width: 60px; height: 84px; font-size: 0.6rem; border-radius: 8px; }
 .deck-count { font-size: 1.5rem; font-weight: 900; color: var(--lime); }
 .deck-count.over { color: var(--coral); }
 .deck-list { max-height: 40vh; overflow-y: auto; margin: 12px 0; }

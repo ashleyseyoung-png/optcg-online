@@ -14,10 +14,12 @@ FIELDS = ["card_set_id", "card_name", "card_type", "card_color", "card_cost",
 
 NULLS = {"-", "—", "‐", "−", "NULL", "null", "", "None"}
 
+# Any trailing "(...)" that describes a PRINTING rather than the card: alt arts, parallels,
+# manga/full art, box toppers, SP/SPR, promo events ("Gift Collection 2023"), winner packs...
 ART_SUFFIX_RE = re.compile(
-    r"\s*\((Alternate Art|Parallel|Box Topper|Manga|Full Art|Reprint)\)\s*$", re.I)
-ID_SUFFIX_RE = re.compile(r"_(p|r)\d+$", re.I)
-NAME_SET_SUFFIX_RE = re.compile(r"\s*-\s*(OP\d{2}|ST\d{2}|EB\d{2})-\d{3}\s*$")  # "Perona - OP14-111"
+    r"\s*\((Alternate Art|Parallel|Box Topper|Manga|Manga Art|Full Art|Reprint|SP|SPR|Special|Wanted Poster|Treasure Rare|Winner[^)]*|[^)]*(Pack|Collection|Tournament|Championship|Edition|Event|Promo|Release|Festival|Fest\.?|Cup|Regional|Store|Anniversary|Gift|Set|Vol\.?)[^)]*)\)\s*$", re.I)
+ID_SUFFIX_RE = re.compile(r"_(p|r|pr|alt|v)\d+$", re.I)
+NAME_SET_SUFFIX_RE = re.compile(r"\s*(?:-\s*|\(\s*)(OP\d{2}|ST\d{2}|EB\d{2}|PRB\d{2}|P)-\d{3}\s*\)?\s*$")  # "Perona - OP14-111", "Zoro (ST32-005)"
 NAME_PAREN_ID_RE = re.compile(r"\s*\((?:OP\d{2}|ST\d{2}|EB\d{2})?-?\d{3}\)\s*$")  # trailing (073) style — keep, these disambiguate real different cards
 
 # Curated supplement to the auto-mined known-type-phrase list (see build below),
@@ -67,22 +69,54 @@ def normalize_id(raw_id):
     return ID_SUFFIX_RE.sub("", raw_id.strip())
 
 
+BRACKET_SUFFIX_RE = re.compile(r"\s*\[([^\]]{1,40})\]\s*$")  # "... [Winner]"
+
+
 def normalize_name(name):
-    name = ART_SUFFIX_RE.sub("", name).strip()
+    for _ in range(3):  # peel "(Alternate Art) [Winner]"-style stacks
+        name = BRACKET_SUFFIX_RE.sub("", name).strip()
+        name = ART_SUFFIX_RE.sub("", name).strip()
     name = NAME_SET_SUFFIX_RE.sub("", name).strip()
+    # "Monkey.D.Luffy (010)" — the source data appends card numbers to disambiguate; official
+    # names don't have them (and effect text refers to plain names), so strip them for display.
+    name = NAME_PAREN_ID_RE.sub("", name).strip()
     return name
 
 
+def variant_label(raw_name, raw_id, base_id):
+    """Human label for a printing: 'Alternate Art', 'Parallel', 'Gift Collection 2023 · Winner', ..."""
+    labels = []
+    name = raw_name
+    for _ in range(3):
+        m = BRACKET_SUFFIX_RE.search(name)
+        if m:
+            labels.insert(0, m.group(1).strip()); name = BRACKET_SUFFIX_RE.sub("", name).strip(); continue
+        m = ART_SUFFIX_RE.search(name)
+        if m:
+            labels.insert(0, m.group(1).strip()); name = ART_SUFFIX_RE.sub("", name).strip(); continue
+        break
+    if labels:
+        return " · ".join(labels)
+    if raw_id != base_id:
+        return "Alternate Art"
+    return None
+
+
 def parse_line(line, source_file):
-    parts = line.split("|", 11)
+    parts = line.split("|", 13)
     if len(parts) < 12:
         return None
-    rec = dict(zip(FIELDS, parts))
+    rec = dict(zip(FIELDS, parts[:12]))
+    image_field = clean(parts[12]) if len(parts) > 12 else None
+    setid_field = clean(parts[13]) if len(parts) > 13 else None
     raw_id = rec["card_set_id"].strip()
-    if not raw_id or " " in raw_id and not raw_id.startswith("P-"):
-        pass
-    base_id = normalize_id(raw_id)
-    name = normalize_name(clean(rec["card_name"]) or "")
+    if not raw_id or raw_id in NULLS:
+        return None
+    # promo lines carry the real card number in the 14th field; the 1st is the printing id
+    base_id = normalize_id(setid_field) if setid_field else normalize_id(raw_id)
+    raw_name = clean(rec["card_name"]) or ""
+    name = normalize_name(raw_name)
+    variant = variant_label(raw_name, raw_id, base_id)
     ctype = clean(rec["card_type"]) or "Character"
     colors = (clean(rec["card_color"]) or "").split()
     cost = to_int(rec["card_cost"])
@@ -96,17 +130,34 @@ def parse_line(line, source_file):
     text = clean(rec["card_text"]) or ""
     text = text.replace("\\n", "\n")
 
-    is_alt = bool(ART_SUFFIX_RE.search(rec["card_name"])) or raw_id != base_id
+    is_alt = variant is not None
 
-    # crude keyword extraction for the rules engine
     keywords = []
     for kw in ["Rush", "Blocker", "Double Attack", "Banish", "Trigger"]:
         if f"[{kw}]" in text:
             keywords.append(kw)
 
+    # printing id: base for the plain card, base_pN / base_prN etc. for other printings
+    pid = raw_id if raw_id.startswith(base_id) else (base_id if not is_alt else f"{base_id}_{raw_id}")
+    if is_alt and pid == base_id:
+        pid = f"{base_id}_v"  # will be de-collided in main()
+
+    # image: explicit URL from the API when we have one; otherwise the standard pattern
+    if image_field and image_field.lower().startswith("http"):
+        image = image_field
+    elif base_id.startswith("P-"):
+        image = f"https://en.onepiece-cardgame.com/images/cardlist/card/{base_id}.png"
+    else:
+        image = f"https://optcgapi.com/media/static/Card_Images/{pid}.jpg"
+    # official Bandai card list as a second source (base card + _pN alt arts exist there too)
+    image2 = f"https://en.onepiece-cardgame.com/images/cardlist/card/{pid if pid == base_id or ID_SUFFIX_RE.search(pid) else base_id}.png"
+
+    set_code = base_id.split("-")[0] if "-" in base_id else base_id
     return {
-        "id": base_id,
+        "id": pid,
+        "baseId": base_id,
         "name": name or base_id,
+        "variant": variant,
         "type": ctype,
         "colors": colors,
         "cost": cost,
@@ -118,9 +169,11 @@ def parse_line(line, source_file):
         "types": types,
         "text": text,
         "keywords": keywords,
-        "set": base_id.split("-")[0] if "-" in base_id else base_id,
-        "image": f"https://optcgapi.com/media/static/Card_Images/{base_id}.jpg",
+        "set": set_code,
+        "image": image,
+        "image2": image2,
         "_is_alt": is_alt,
+        "_has_img": bool(image_field and image_field.lower().startswith("http")),
         "_source": source_file,
     }
 
@@ -172,11 +225,7 @@ def main():
         with open(fp, encoding="utf-8") as f:
             for line in f:
                 line = line.rstrip("\n")
-                if not line.strip():
-                    continue
-                if line.startswith("###"):
-                    continue
-                if line.strip() in ("FETCH_FAILED",):
+                if not line.strip() or line.startswith("###") or line.strip() == "FETCH_FAILED":
                     continue
                 total_lines += 1
                 card = parse_line(line, os.path.basename(fp))
@@ -184,26 +233,77 @@ def main():
                     skipped += 1
                     continue
                 cid = card["id"]
+                if cid.endswith("_v"):
+                    # same id reused for a different printing (e.g. ST29 base + Parallel): make unique
+                    n = 2
+                    while f"{card['baseId']}_v{n}" in cards_by_id:
+                        n += 1
+                    cid = f"{card['baseId']}_v{n}"
+                    card["id"] = cid
+                    card["image"] = card["image"] if card["_has_img"] else f"https://optcgapi.com/media/static/Card_Images/{card['baseId']}.jpg"
                 if cid in cards_by_id:
                     dupe_count += 1
                     existing = cards_by_id[cid]
-                    # prefer the non-alt-art / shorter-name version as canonical
-                    if existing["_is_alt"] and not card["_is_alt"]:
+                    # keep the record with the most information (explicit image / longer text)
+                    if (card["_has_img"] and not existing["_has_img"]) or (len(card["text"]) > len(existing["text"]) and not existing["_has_img"]):
                         cards_by_id[cid] = card
                     continue
                 cards_by_id[cid] = card
+
+    # Alt printings that came from dumps without a distinct image id ("_vN" placeholders): both
+    # optcgapi and the official card list publish alt arts as {base}_p1, {base}_p2, ... in
+    # release order, so give each one the next free _pN slot for its base. If an explicit _pN
+    # row already exists for that slot, the placeholder is the same printing -> merge into it.
+    by_base = {}
+    for c in cards_by_id.values():
+        by_base.setdefault(c["baseId"], []).append(c)
+    for base_id, group in by_base.items():
+        taken = {c["id"] for c in group}
+        placeholders = sorted((c for c in group if re.search(r"_v\d+$", c["id"])), key=lambda c: int(c["id"].rsplit("_v", 1)[1]))
+        n = 1
+        for c in placeholders:
+            while f"{base_id}_p{n}" in taken:
+                n += 1
+            del cards_by_id[c["id"]]
+            new_id = f"{base_id}_p{n}"
+            c["id"] = new_id
+            if not c["_has_img"]:
+                c["image"] = f"https://optcgapi.com/media/static/Card_Images/{new_id}.jpg"
+            c["image2"] = f"https://en.onepiece-cardgame.com/images/cardlist/card/{new_id}.png"
+            cards_by_id[new_id] = c
+            taken.add(new_id)
+            n += 1
+
+    # every printing must have a base card to hang off; synthesize one from the first printing if missing
+    bases = {c["baseId"] for c in cards_by_id.values() if c["id"] == c["baseId"]}
+    for c in list(cards_by_id.values()):
+        if c["baseId"] not in bases:
+            base = dict(c)
+            base["id"] = c["baseId"]
+            base["variant"] = None
+            base["_is_alt"] = False
+            base["image"] = f"https://optcgapi.com/media/static/Card_Images/{c['baseId']}.jpg" if not c["_has_img"] else c["image"]
+            base["image2"] = f"https://en.onepiece-cardgame.com/images/cardlist/card/{c['baseId']}.png"
+            cards_by_id[c["baseId"]] = base
+            bases.add(c["baseId"])
+
+    # A printing is the same card as its base by rule: inherit the base's game data so a
+    # data slip on an alt-art row can never make it play differently.
+    base_by_id = {c["baseId"]: c for c in cards_by_id.values() if c["id"] == c["baseId"]}
+    for c in cards_by_id.values():
+        if c["id"] != c["baseId"]:
+            b = base_by_id[c["baseId"]]
+            for k in ("name", "type", "colors", "cost", "power", "counter", "life", "attribute", "types", "text", "keywords", "set"):
+                c[k] = b[k]
 
     cards = list(cards_by_id.values())
     all_text = " ".join(c["text"] for c in cards)
     known_sorted = build_known_types(all_text)
     for c in cards:
-        del c["_is_alt"]
-        raw_sub = None
-        # re-derive from source line isn't stored; use existing crude split joined back
-        raw_sub = " ".join(c["types"])
-        c["types"] = segment_types(raw_sub, known_sorted)
-        del c["_source"]
-    cards.sort(key=lambda c: c["id"])
+        c["types"] = segment_types(" ".join(c["types"]), known_sorted)
+        for k in ("_is_alt", "_has_img", "_source"):
+            c.pop(k, None)
+    cards.sort(key=lambda c: (c["baseId"], c["id"] != c["baseId"], c["id"]))
 
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w", encoding="utf-8") as f:
@@ -212,11 +312,11 @@ def main():
     by_type = {}
     for c in cards:
         by_type[c["type"]] = by_type.get(c["type"], 0) + 1
-
+    n_base = sum(1 for c in cards if c["id"] == c["baseId"])
     print(f"Parsed {total_lines} raw lines from {len(files)} files")
     print(f"Skipped (malformed): {skipped}")
-    print(f"Duplicate ids merged: {dupe_count}")
-    print(f"Unique cards written: {len(cards)}")
+    print(f"Duplicate printings merged: {dupe_count}")
+    print(f"Printings written: {len(cards)}  (base cards: {n_base}, alt/promo printings: {len(cards) - n_base})")
     print("By type:", by_type)
     print("Output:", OUT_PATH)
 

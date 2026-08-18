@@ -14,15 +14,25 @@ function validateDeck(leaderId, cardCounts) {
   const leaderColors = leader ? leader.colors : [];
 
   let total = 0;
+  // Copies are counted per CARD NUMBER (base id): an alt art / parallel is the same card
+  // as its regular printing, so 2× OP01-024 + 3× OP01-024_p1 is 5 copies -> illegal.
+  const perBase = new Map();
   for (const [cardId, count] of Object.entries(cardCounts)) {
     const card = getCard(cardId);
     if (!card) { errors.push(`Unknown card: ${cardId}`); continue; }
     if (card.type === 'Leader') { errors.push(`${card.name} is a Leader and can't go in the main deck.`); continue; }
-    if (count < 0 || count > MAX_COPIES) errors.push(`${card.name}: max ${MAX_COPIES} copies (has ${count}).`);
+    if (count < 0) errors.push(`${card.name}: invalid count (${count}).`);
+    const baseId = card.baseId || card.id;
+    const agg = perBase.get(baseId) || { name: card.name, id: baseId, count: 0 };
+    agg.count += count;
+    perBase.set(baseId, agg);
     if (leader && !card.colors.some((c) => leaderColors.includes(c))) {
       errors.push(`${card.name} (${card.colors.join('/')}) doesn't match your Leader's color (${leaderColors.join('/')}).`);
     }
     total += count;
+  }
+  for (const agg of perBase.values()) {
+    if (agg.count > MAX_COPIES) errors.push(`${agg.name} (${agg.id}): max ${MAX_COPIES} copies counting all art versions (has ${agg.count}).`);
   }
   if (total !== DECK_SIZE) errors.push(`Deck must have exactly ${DECK_SIZE} cards (has ${total}).`);
   return errors;

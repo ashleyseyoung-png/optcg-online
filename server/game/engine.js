@@ -305,8 +305,9 @@ class Game {
     if (!c) return { koed: false };
     owner.characterArea[idx] = null;
     owner.trash.unshift(c.cardId);
-    owner.cost.rested += 0; // DON attached to a KO'd character returns to the DON deck per rules
-    owner.donDeckCount += c.donAttached;
+    // Rule: DON!! given to a card that leaves the field go back to its owner's cost area, RESTED
+    // (they become active again at that player's next Refresh Phase). They do NOT go to the DON!! deck.
+    owner.cost.rested += c.donAttached;
     this._log(`${getCard(c.cardId).name} was K.O.'d.`);
     return { koed: true };
   }
@@ -470,43 +471,115 @@ class Game {
   }
 
   // ---------- manual toolbox (fallback for un-auto-resolved effects) ----------
+  // Every tool is bounded by what the printed rules could ever produce, so the toolbox
+  // can apply a card's effect but can't conjure resources out of nothing:
+  //   • DON!! is conserved — a player always has exactly 10 across DON!! deck + cost area
+  //     + attached. Tools MOVE DON!! between those places; they never create it.
+  //   • Draw is capped at 2 per use and only from a non-empty deck.
+  //   • Power tweaks are ±1000/±2000 per use, only during the current turn (they clear at
+  //     end of turn), and only on the acting player's own turn or during a battle they're in.
+  //   • Everything is announced loudly in the log so the opponent sees exactly what was done.
   manualAction(seat, action) {
+    if (this.winner !== null) throw new Error('Game is over');
     const p = this.players[seat];
     const opp = this.players[this.other(seat)];
+    const battleInvolvesMe = this.pendingBattle && (this.pendingBattle.attackerSeat === seat || this.other(this.pendingBattle.attackerSeat) === seat);
+    if (this.turnPlayer !== seat && !battleInvolvesMe && !(this.pendingTrigger && this.pendingTrigger.seat === seat) && !(this.pendingEffect && this.pendingEffect.seat === seat)) {
+      throw new Error("You can only use the toolbox on your own turn (or while resolving a battle/trigger/effect that involves you)");
+    }
+    const donOnField = (o) => o.cost.active + o.cost.rested + o.leaderState.donAttached + o.characterArea.reduce((n, c) => n + (c ? c.donAttached : 0), 0);
+    let what = action.type;
     switch (action.type) {
-      case 'draw': this._drawCards(p, action.count || 1); break;
+      case 'draw': {
+        const n = Math.max(1, Math.min(2, Number(action.count) || 1));
+        if (p.deck.length === 0) throw new Error('Your deck is empty');
+        this._drawCards(p, n);
+        what = `drew ${n} card${n === 1 ? '' : 's'}`;
+        break;
+      }
       case 'adjustPower': {
         const owner = action.side === 'opp' ? opp : p;
-        if (action.target === 'leader') owner.leaderState.powerMod += action.amount;
-        else { const c = owner.characterArea[action.target]; if (c) c.powerMod += action.amount; }
+        const amt = Math.max(-2000, Math.min(2000, Math.round((Number(action.amount) || 0) / 1000) * 1000));
+        if (!amt) throw new Error('Power change must be ±1000 or ±2000');
+        let target;
+        if (action.target === 'leader') { owner.leaderState.powerMod += amt; target = getCard(owner.leaderId).name; }
+        else { const c = owner.characterArea[action.target]; if (!c) throw new Error('No character there'); c.powerMod += amt; target = getCard(c.cardId).name; }
+        what = `gave ${owner.username}'s ${target} ${amt > 0 ? '+' : ''}${amt} power (this turn)`;
         break;
       }
       case 'toggleRest': {
         const owner = action.side === 'opp' ? opp : p;
-        if (action.target === 'leader') owner.leaderState.rested = !owner.leaderState.rested;
-        else { const c = owner.characterArea[action.target]; if (c) c.rested = !c.rested; }
+        let target;
+        if (action.target === 'leader') { owner.leaderState.rested = !owner.leaderState.rested; target = getCard(owner.leaderId).name + (owner.leaderState.rested ? ' → rested' : ' → active'); }
+        else { const c = owner.characterArea[action.target]; if (!c) throw new Error('No character there'); c.rested = !c.rested; target = getCard(c.cardId).name + (c.rested ? ' → rested' : ' → active'); }
+        what = `set ${owner.username}'s ${target}`;
         break;
       }
       case 'ko': {
         const owner = action.side === 'opp' ? opp : p;
+        const c = owner.characterArea[action.target];
+        if (!c) throw new Error('No character there');
+        const name = getCard(c.cardId).name;
         this._koCharacter(owner, action.target);
+        what = `K.O.'d ${owner.username}'s ${name}`;
         break;
       }
-      case 'donAdjust': {
-        const owner = action.side === 'opp' ? opp : p;
-        owner.cost.active = Math.max(0, owner.cost.active + (action.deltaActive || 0));
-        owner.donDeckCount = Math.max(0, owner.donDeckCount + (action.deltaDeck || 0));
+      case 'donFromDeck': { // DON!! deck → cost area (active or rested). "Add up to 1 DON!! card from your DON!! deck"
+        if (p.donDeckCount <= 0) throw new Error('Your DON!! deck is empty (all 10 DON!! are already on the field)');
+        p.donDeckCount -= 1;
+        if (action.rested) p.cost.rested += 1; else p.cost.active += 1;
+        what = `added 1 DON!! from the DON!! deck (${action.rested ? 'rested' : 'active'})`;
         break;
       }
+      case 'donToDeck': { // cost area → DON!! deck. "Return 1 DON!! card to your DON!! deck"
+        if (p.cost.rested > 0) p.cost.rested -= 1;
+        else if (p.cost.active > 0) p.cost.active -= 1;
+        else throw new Error('No DON!! in your cost area to return');
+        p.donDeckCount += 1;
+        what = 'returned 1 DON!! to the DON!! deck';
+        break;
+      }
+      case 'donRest': { // set 1 active DON!! rested (paying an "(1)" cost) or 1 rested DON!! active
+        if (action.activate) {
+          if (p.cost.rested <= 0) throw new Error('No rested DON!! to set active');
+          p.cost.rested -= 1; p.cost.active += 1; what = 'set 1 DON!! active';
+        } else {
+          if (p.cost.active <= 0) throw new Error('No active DON!! to rest');
+          p.cost.active -= 1; p.cost.rested += 1; what = 'rested 1 DON!!';
+        }
+        break;
+      }
+      case 'donDetach': { // return DON!! given to a card back to the cost area (rested)
+        const owner = p;
+        if (action.target === 'leader') {
+          if (owner.leaderState.donAttached <= 0) throw new Error('No DON!! on your Leader');
+          owner.leaderState.donAttached -= 1;
+        } else {
+          const c = owner.characterArea[action.target];
+          if (!c || c.donAttached <= 0) throw new Error('No DON!! on that character');
+          c.donAttached -= 1;
+        }
+        owner.cost.rested += 1;
+        what = 'returned 1 attached DON!! to the cost area';
+        break;
+      }
+      case 'donAdjust': throw new Error('That tool has been replaced by the DON!! move tools');
       case 'moveHandToTrash': {
         const idx = action.handIndex;
         const id = p.hand[idx];
-        if (id) { p.hand.splice(idx, 1); p.trash.unshift(id); }
+        if (!id) throw new Error('No such card in hand');
+        p.hand.splice(idx, 1); p.trash.unshift(id);
+        what = `trashed ${getCard(id).name} from hand`;
         break;
       }
       default: throw new Error('Unknown manual action');
     }
-    this._log(`${p.username} used a manual board tool (${action.type}).`);
+    // invariant check — should be impossible to violate now, but never let it slide silently
+    for (const pl of this.players) {
+      const total = pl.donDeckCount + donOnField(pl);
+      if (total !== 10) { pl.donDeckCount = Math.max(0, 10 - donOnField(pl)); }
+    }
+    this._log(`🛠 ${p.username} used the toolbox: ${what}.`);
   }
 
   concede(seat) {

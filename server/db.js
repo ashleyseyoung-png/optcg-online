@@ -96,4 +96,4 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_decks_owner ON decks(owner_key);
 `);
 
-module.exports = { db, DB_PATH };
+module.exports = { db, DB_PATH, DATA_DIR };

@@ -4,7 +4,7 @@ services:
     name: grand-line-tcg
     runtime: node
     plan: free
-    buildCommand: npm install          # no dependencies, so this is effectively a no-op
+    buildCommand: npm install && npm run sync-cards   # no deps to install; sync pulls any new cards/alt arts
     startCommand: npm start
     healthCheckPath: /healthz
     autoDeploy: true

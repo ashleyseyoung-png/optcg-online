@@ -122,6 +122,7 @@ function wireStaticUi() {
     onHandCardClick(Number(el.dataset.idx));
   });
   wirePreview(hand);
+  wirePreview(document.getElementById('prompt-root')); // e.g. the revealed Trigger card
 
   document.getElementById('end-turn-btn').onclick = () => { if (isMyMain()) send('endMainPhase'); };
   document.getElementById('attach-don-btn').onclick = () => { attachDonMode = !attachDonMode; selectedAttacker = null; render(); };
@@ -140,10 +141,11 @@ function wireStaticUi() {
     b.onclick = () => {
       const t = b.dataset.tb;
       if (t === 'draw') send('manualAction', { action: { type: 'draw', count: 1 } });
-      else if (t === 'donActivePlus') send('manualAction', { action: { type: 'donAdjust', deltaActive: 1 } });
-      else if (t === 'donActiveMinus') send('manualAction', { action: { type: 'donAdjust', deltaActive: -1 } });
-      else if (t === 'donDeckPlus') send('manualAction', { action: { type: 'donAdjust', deltaDeck: 1 } });
-      else if (t === 'donDeckMinus') send('manualAction', { action: { type: 'donAdjust', deltaDeck: -1 } });
+      else if (t === 'donFromDeckActive') send('manualAction', { action: { type: 'donFromDeck', rested: false } });
+      else if (t === 'donFromDeckRested') send('manualAction', { action: { type: 'donFromDeck', rested: true } });
+      else if (t === 'donToDeck') send('manualAction', { action: { type: 'donToDeck' } });
+      else if (t === 'donRest') send('manualAction', { action: { type: 'donRest' } });
+      else if (t === 'donActivate') send('manualAction', { action: { type: 'donRest', activate: true } });
       else if (t === 'discardHand') { awaitingHandDiscard = true; render(); }
     };
   });
@@ -176,14 +178,9 @@ function wireDrawerResize() {
   handle.addEventListener('pointerup', stop); handle.addEventListener('pointercancel', stop);
 }
 
-// Drawer open: preview docks at the top of the drawer. Drawer closed: preview floats on the right.
 function applyDrawer() {
   const arena = document.querySelector('.arena');
   arena.classList.toggle('side-shown', !sideHidden);
-  const preview = document.getElementById('card-preview');
-  const drawer = document.getElementById('side-panel');
-  if (!sideHidden) drawer.insertBefore(preview, drawer.firstChild.nextSibling); // after the drawer-head
-  else arena.appendChild(preview);
 }
 
 function setTab(tab) {
@@ -598,7 +595,7 @@ function renderMat(p, isMe, hl) {
       <div class="chars" data-side="${side}">${slots}</div>
       <div class="stack-col">
         <div class="mini-pile deck" data-key="D${p.seat}"><span class="plabel">Deck</span><span class="cnt">${p.deckCount}</span></div>
-        <div class="mini-pile trash" data-key="T${p.seat}" data-role="trash" data-seat="${p.seat}" title="Click to look through the trash" ${trashTop ? `data-card-id="${p.trash[0]}"` : ''}><span class="plabel">Trash</span>${trashTop && !FAILED_IMGS.has(cardImgUrl(trashTop)) ? `<img src="${cardImgUrl(trashTop)}" alt="" onerror="FAILED_IMGS.add(this.src); this.remove();" />` : ''}<span class="cnt">${p.trash.length}</span></div>
+        <div class="mini-pile trash" data-key="T${p.seat}" data-role="trash" data-seat="${p.seat}" title="Click to look through the trash" ${trashTop ? `data-card-id="${p.trash[0]}"` : ''}><span class="plabel">Trash</span>${trashTop ? cardImgHtml(trashTop) : ''}<span class="cnt">${p.trash.length}</span></div>
       </div>
     </div>
     <div class="row-don">
@@ -636,6 +633,16 @@ function renderLog() {
   if (STATE.log.length) lastLogTs = Math.max(lastLogTs, STATE.log[STATE.log.length - 1].ts);
 }
 
+// The [Trigger] part of a card's text (falls back to the whole text).
+function triggerText(card) {
+  if (!card || !card.text) return '';
+  const i = card.text.indexOf('[Trigger]');
+  if (i < 0) return card.text;
+  const rest = card.text.slice(i + '[Trigger]'.length).trim();
+  const cut = rest.search(/\n\s*\[(?!Trigger)/); // stop at the next ability line
+  return (cut > 0 ? rest.slice(0, cut) : rest).trim();
+}
+
 function renderPrompts(me, opp) {
   const root = document.getElementById('prompt-root');
   const meSeat = STATE.you;
@@ -649,8 +656,13 @@ function renderPrompts(me, opp) {
     html = `<div class="prompt-banner"><span class="txt">Waiting for ${oppName} to decide on their mulligan…</span></div>`;
   } else if (STATE.pendingTrigger && STATE.pendingTrigger.seat === meSeat) {
     const c = getCard(STATE.pendingTrigger.cardId);
-    html = `<div class="prompt-banner"><span class="txt">Life card revealed: <b>${c ? escapeHtml(c.name) : '?'}</b> has [Trigger]! Activate it, or add it to your hand?</span>
-      <button class="btn small gold" id="prompt-trig-yes">Activate Trigger</button><button class="btn small secondary" id="prompt-trig-no">Add to Hand</button></div>`;
+    html = `<div class="prompt-banner trigger-reveal">
+      <div class="reveal-card" ${c ? `data-card-id="${escapeHtml(c.id)}"` : ''}>${c ? cardImgHtml(c) : '<div class="fallback">?</div>'}</div>
+      <div class="reveal-body">
+        <div class="reveal-title">Life card revealed: <b>${c ? escapeHtml(c.name) : '?'}</b> — it has a <b>[Trigger]</b>!</div>
+        <div class="reveal-text">${escapeHtml(triggerText(c))}</div>
+        <div class="reveal-actions"><button class="btn small gold" id="prompt-trig-yes">Activate Trigger</button><button class="btn small secondary" id="prompt-trig-no">Add to Hand</button></div>
+      </div></div>`;
   } else if (STATE.pendingTrigger) {
     html = `<div class="prompt-banner"><span class="txt">${oppName} revealed a [Trigger] card — deciding…</span></div>`;
   } else if (STATE.pendingEffect && STATE.pendingEffect.seat === meSeat) {
@@ -719,11 +731,14 @@ function renderToolboxTargetActions() {
   const { side, type, idx } = tbSelectedTarget;
   const owner = side === 'self' ? currentMe() : currentOpp();
   const who = side === 'self' ? 'Your' : `${escapeHtml(owner.username)}'s`;
-  info.textContent = `Selected: ${who} ${type === 'leader' ? 'Leader' : 'Character #' + (Number(idx) + 1)}`;
-  actions.innerHTML = `<button class="pill sm" data-tbact="power+">+1000 Power</button>
-    <button class="pill sm" data-tbact="power-">−1000 Power</button>
-    <button class="pill sm" data-tbact="rest">Toggle Rest</button>
-    ${type === 'char' ? '<button class="pill sm danger" data-tbact="ko">K.O.</button>' : ''}`;
+  const bc = type === 'leader' ? owner.leaderState : owner.characterArea[Number(idx)];
+  const cardName = type === 'leader' ? (getCard(owner.leaderId) || {}).name : (bc && getCard(bc.cardId) || {}).name;
+  info.textContent = `Selected: ${who} ${type === 'leader' ? 'Leader' : 'Character'}${cardName ? ' — ' + cardName : ''}`;
+  actions.innerHTML = `<button class="pill sm" data-tbact="power+" title="+1000 power until the end of this turn">+1000 Power</button>
+    <button class="pill sm" data-tbact="power-" title="−1000 power until the end of this turn">−1000 Power</button>
+    <button class="pill sm" data-tbact="rest" title="Rest / set active">Toggle Rest</button>
+    ${side === 'self' && bc && bc.donAttached > 0 ? '<button class="pill sm" data-tbact="donDetach" title="Return 1 DON!! given to this card to your cost area (rested)">Return 1 DON!!</button>' : ''}
+    ${type === 'char' ? '<button class="pill sm danger" data-tbact="ko" title="K.O. this Character (its DON!! go back to the cost area, rested)">K.O.</button>' : ''}`;
   actions.querySelectorAll('[data-tbact]').forEach((b) => { b.onclick = () => applyTbAction(b.dataset.tbact); });
 }
 function applyTbAction(act) {
@@ -734,6 +749,7 @@ function applyTbAction(act) {
   else if (act === 'power-') send('manualAction', { action: { type: 'adjustPower', side, target, amount: -1000 } });
   else if (act === 'rest') send('manualAction', { action: { type: 'toggleRest', side, target } });
   else if (act === 'ko') send('manualAction', { action: { type: 'ko', side, target } });
+  else if (act === 'donDetach') send('manualAction', { action: { type: 'donDetach', target } });
 }
 
 function gameOverHtml() {
@@ -776,7 +792,7 @@ function flyCard({ from, to, card, back, delay = 0, duration = 420, fadeOut = fa
   el.style.transitionDuration = duration + 'ms';
   el.style.left = from.left + 'px'; el.style.top = from.top + 'px';
   el.style.width = from.width + 'px'; el.style.height = from.height + 'px';
-  if (card && !back) el.innerHTML = `<img src="${cardImgUrl(card)}" alt="" onerror="this.style.display='none'" />`;
+  if (card && !back) el.innerHTML = cardImgHtml(card);
   document.getElementById('fly-layer').appendChild(el);
   setTimeout(() => {
     void el.offsetWidth;
@@ -920,29 +936,49 @@ function animateDiff(before) {
   if (needsMe) if (window.SFX) SFX.play('prompt');
 }
 
-// ---------- card preview pane (large art + text, top of the sidebar) ----------
+// ---------- card zoom (hover a card -> big readable copy at the right edge of the screen) ----------
+// Always the same spot, never covers the middle of the board; disappears when you move off the
+// card. Right-click a card to pin it there while you think.
 let previewPinnedId = null;
+let previewHideTimer = null;
 function wirePreview(container) {
   container.addEventListener('mouseover', (e) => {
     const el = e.target.closest('[data-card-id]');
     if (!el || previewPinnedId) return;
+    if (previewHideTimer) { clearTimeout(previewHideTimer); previewHideTimer = null; }
     showPreview(el.dataset.cardId);
+  });
+  container.addEventListener('mouseout', (e) => {
+    const el = e.target.closest('[data-card-id]');
+    if (!el || previewPinnedId) return;
+    // if we're moving onto another card the next mouseover cancels this
+    const to = e.relatedTarget && e.relatedTarget.closest ? e.relatedTarget.closest('[data-card-id]') : null;
+    if (to === el) return;
+    if (previewHideTimer) clearTimeout(previewHideTimer);
+    previewHideTimer = setTimeout(hidePreview, 90);
   });
   container.addEventListener('contextmenu', (e) => {
     const el = e.target.closest('[data-card-id]');
     if (!el) return;
     e.preventDefault();
-    // right-click pins / unpins a card in the preview so you can read it while moving the mouse
-    previewPinnedId = previewPinnedId === el.dataset.cardId ? null : el.dataset.cardId;
+    // right-click pins / unpins a card in the zoom so you can read it while moving the mouse
+    if (previewPinnedId === el.dataset.cardId) { previewPinnedId = null; document.getElementById('card-preview').classList.remove('pinned'); hidePreview(); return; }
+    previewPinnedId = el.dataset.cardId;
     showPreview(el.dataset.cardId);
-    document.getElementById('card-preview').classList.toggle('pinned', !!previewPinnedId);
+    document.getElementById('card-preview').classList.add('pinned');
   });
+}
+function hidePreview() {
+  previewHideTimer = null;
+  if (previewPinnedId) return;
+  document.getElementById('card-preview').classList.remove('show');
 }
 function showPreview(cardId) {
   const card = getCard(cardId);
   if (!card) return;
+  document.getElementById('card-preview').classList.add('show');
   const img = document.getElementById('cp-img');
-  if (img.getAttribute('src') !== cardImgUrl(card)) { img.src = cardImgUrl(card); img.alt = card.name; }
+  setCardImg(img, card);
   document.getElementById('cp-name').textContent = card.name;
   const stats = [
     card.type,
@@ -1045,13 +1081,13 @@ function coachContent(me, opp) {
   if (STATE.phase === 'mulligan') {
     if (!me.mulliganDone) {
       const cheap = me.hand.filter((id) => { const c = getCard(id); return c && c.type === 'Character' && c.cost !== null && c.cost <= 3; }).length;
-      return { title: 'Opening hand', body: `Your side of the table is at the bottom, laid out like a real playmat: Life column on the left, Character Area on top, Leader/Stage/Deck in the middle, DON!! Cost Area along the bottom. You drew 5 cards (bottom of the screen). Once per game you may <b>mulligan</b>: shuffle them back and draw a fresh 5. A good keep has 2–3 cheap Characters (cost 1–3). You have <b>${cheap}</b> right now.`, action: cheap >= 2 ? 'This is a fine hand — click <b>Keep Hand</b>.' : 'This hand is slow — try <b>Mulligan</b> for a better start.', tip: 'Hover any card to read its full text and stats.' };
+      return { title: 'Opening hand', body: `Your side of the table is at the bottom, laid out like a real playmat: Life column on the left, Character Area on top, Leader/Stage/Deck in the middle, DON!! Cost Area along the bottom. You drew 5 cards (bottom of the screen). Once per game you may <b>mulligan</b>: shuffle them back and draw a fresh 5. A good keep has 2–3 cheap Characters (cost 1–3). You have <b>${cheap}</b> right now.`, action: cheap >= 2 ? 'This is a fine hand — click <b>Keep Hand</b>.' : 'This hand is slow — try <b>Mulligan</b> for a better start.', tip: 'Hover any card and a big readable copy appears at the right edge of the screen. Right-click a card to pin it there.' };
     }
     return { title: 'Waiting', body: `${oppName} is deciding on their mulligan.` };
   }
   if (STATE.pendingTrigger && STATE.pendingTrigger.seat === meSeat) {
     const c = getCard(STATE.pendingTrigger.cardId);
-    return { title: 'Trigger!', body: `You took damage and the Life card you revealed — <b>${c ? escapeHtml(c.name) : '?'}</b> — has a <b>[Trigger]</b> effect. You can activate it for free instead of adding it to your hand.`, action: 'Read the [Trigger] text (hover the card in the log or your hand later). If it helps right now, click <b>Activate Trigger</b>; otherwise <b>Add to Hand</b>.', tip: 'Some effects are too unique to auto-resolve — the log will tell you if you need to apply one by hand with the Toolbox.' };
+    return { title: 'Trigger!', body: `You took damage and the Life card you revealed — <b>${c ? escapeHtml(c.name) : '?'}</b> — has a <b>[Trigger]</b> effect. You can activate it for free instead of adding it to your hand.`, action: 'The revealed card and its [Trigger] text are shown above your hand (hover it to zoom). If it helps right now, click <b>Activate Trigger</b>; otherwise <b>Add to Hand</b>.', tip: 'Some effects are too unique to auto-resolve — the log will tell you if you need to apply one by hand with the Toolbox.' };
   }
   if (STATE.pendingTrigger) return { title: 'Trigger', body: `${oppName} revealed a Trigger card and is choosing whether to activate it.` };
   if (STATE.pendingEffect && STATE.pendingEffect.seat === meSeat) {
