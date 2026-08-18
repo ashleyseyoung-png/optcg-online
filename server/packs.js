@@ -55,6 +55,61 @@ const SET_NAMES = {
   EB03: 'Extra Booster: One Piece Heroines Edition', EB04: 'Extra Booster EB-04',
 };
 
+// Official product photos of the physical booster packs (Bandai's product pages). Relayed and
+// cached by /api/set-image/:set so they load for everyone; if a set has no photo yet the client
+// draws a foil pack with the set's cover card instead.
+const OFFICIAL = 'https://en.onepiece-cardgame.com';
+const PACK_IMAGES = {
+  OP01: [`${OFFICIAL}/renewal/images/products/boosters/op01/img_item01.webp`],
+  OP02: [`${OFFICIAL}/renewal/images/products/boosters/op02/img_item01.webp`],
+  OP03: [`${OFFICIAL}/renewal/images/products/boosters/op03/img_item01.webp`],
+  OP04: [`${OFFICIAL}/renewal/images/products/boosters/op04/img_item01.webp`],
+  OP05: [`${OFFICIAL}/renewal/images/products/boosters/op05/img_item01.webp`],
+  OP06: [`${OFFICIAL}/renewal/images/products/boosters/op06/img_item01.webp`],
+  OP07: [`${OFFICIAL}/renewal/images/products/boosters/op07/img_item01.webp`],
+  OP08: [`${OFFICIAL}/renewal/images/products/boosters/op08/img_item01.webp`],
+  OP09: [`${OFFICIAL}/renewal/images/products/boosters/op09/img_item01.webp`],
+  OP10: [`${OFFICIAL}/renewal/images/products/boosters/op10/img_item01.webp`],
+  OP11: [`${OFFICIAL}/renewal/images/products/boosters/op11/img_item01.webp`],
+  OP12: [`${OFFICIAL}/renewal/images/products/boosters/op12/img_item01.webp`],
+  OP13: [`${OFFICIAL}/renewal/images/products/boosters/op13/img_item01.webp`],
+  OP14: [`${OFFICIAL}/renewal/images/products/boosters/op14/img_item01.webp`, `${OFFICIAL}/renewal/images/products/boosters/op14-eb04/img_item01.webp`],
+  OP15: [`${OFFICIAL}/renewal/images/products/boosters/op15-eb04/img_item01.webp`, `${OFFICIAL}/renewal/images/products/boosters/op15/img_item01.webp`],
+  OP16: [`${OFFICIAL}/onepiececg/bccard/en/products/2026/03/26/olc1E9Gg9WXeLP6V/img_item01.webp`, `${OFFICIAL}/renewal/images/products/boosters/op16/img_item01.webp`],
+  EB01: [`${OFFICIAL}/renewal/images/products/boosters/eb01/img_item01.webp`],
+  EB02: [`${OFFICIAL}/renewal/images/products/boosters/eb02/img_item01.webp`],
+  EB03: [`${OFFICIAL}/renewal/images/products/boosters/eb03/img_item01.webp`],
+  EB04: [`${OFFICIAL}/renewal/images/products/boosters/eb04/img_item01.webp`],
+};
+const fs = require('fs');
+const path = require('path');
+let SET_IMG_DIR = null;
+function setImageCacheDir(dataDir) { try { SET_IMG_DIR = path.join(dataDir, 'set-images'); fs.mkdirSync(SET_IMG_DIR, { recursive: true }); } catch (e) { SET_IMG_DIR = null; } }
+const setImgInflight = new Map();
+async function relaySetImage(setCode) {
+  const cachePath = SET_IMG_DIR ? path.join(SET_IMG_DIR, setCode) : null;
+  if (cachePath) { try { const buf = fs.readFileSync(cachePath); if (buf.length > 100) return { buf, type: buf[0] === 0x89 ? 'image/png' : buf[0] === 0xff ? 'image/jpeg' : 'image/webp' }; } catch (e) { /* miss */ } }
+  if (setImgInflight.has(setCode)) return setImgInflight.get(setCode);
+  const p = (async () => {
+    let lastErr = null;
+    for (const url of PACK_IMAGES[setCode] || []) {
+      try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(15000), headers: { 'user-agent': 'Mozilla/5.0 (compatible; GrandLineTCG/1.0)', accept: 'image/*' }, redirect: 'follow' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const type = (res.headers.get('content-type') || '').split(';')[0].trim();
+        if (!type.startsWith('image/')) throw new Error('not an image');
+        const buf = Buffer.from(await res.arrayBuffer());
+        if (buf.length < 100 || buf.length > 4 * 1024 * 1024) throw new Error('bad size');
+        if (cachePath) { try { fs.writeFileSync(cachePath, buf); } catch (e) { /* ignore */ } }
+        return { buf, type };
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('no image');
+  })();
+  setImgInflight.set(setCode, p);
+  try { return await p; } finally { setImgInflight.delete(setCode); }
+}
+
 // The odds model (per pack unless noted). Sources: tcgtalk.com box pull-rate guide, cardgamer.com
 // rarities guide, tcgking.nl rarities guide, slab-z.com pull-rate guide (2026).
 const PACK_MODEL = {
@@ -199,6 +254,7 @@ function registerRoutes(router) {
       opened: stats[p.set] ? stats[p.set].packs : 0,
       hits: stats[p.set] ? stats[p.set].hits : 0,
       cover: p.L[0] || p.SR[0],
+      packImage: PACK_IMAGES[p.set] ? `/api/set-image/${p.set}` : null,
     }));
     sendJson(res, 200, { sets: list, model: PACK_MODEL });
   });
@@ -216,6 +272,19 @@ function registerRoutes(router) {
     sendJson(res, 200, { set: setCode, name: SET_NAMES[setCode] || setCode, packs, saved: !!owner });
   });
 
+  router.get('/api/set-image/:set', async (req, res) => {
+    const setCode = String(req.params.set || '').toUpperCase();
+    if (!PACK_IMAGES[setCode]) { res.writeHead(404, { 'Content-Type': 'text/plain' }); res.end('No pack image'); return; }
+    try {
+      const { buf, type } = await relaySetImage(setCode);
+      res.writeHead(200, { 'Content-Type': type, 'Content-Length': buf.length, 'Cache-Control': 'public, max-age=2592000, immutable' });
+      res.end(buf);
+    } catch (e) {
+      res.writeHead(502, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' });
+      res.end('Image unavailable');
+    }
+  });
+
   router.get('/api/collection', (req, res) => {
     attachSession(req);
     const owner = ownerKey(req.session);
@@ -227,4 +296,4 @@ function registerRoutes(router) {
   });
 }
 
-module.exports = { registerRoutes, generatePack, buildPools, refreshPools, PACK_MODEL, SET_NAMES };
+module.exports = { registerRoutes, generatePack, buildPools, refreshPools, PACK_MODEL, SET_NAMES, setImageCacheDir };

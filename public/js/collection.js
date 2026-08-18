@@ -21,8 +21,16 @@ async function init() {
   const sel = document.getElementById('coll-set');
   for (const s of sets) { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); }
   ['coll-search', 'coll-set', 'coll-tier', 'coll-sort'].forEach((id) => { const el = document.getElementById(id); el.addEventListener('input', render); el.addEventListener('change', render); });
-  attachCardTooltips(document.getElementById('coll-grid'), getCard);
-  attachCardTooltips(document.getElementById('coll-recent'), getCard);
+  // click a card → big viewer (with ◀ ▶ through what's on screen)
+  const clickToView = (container) => container.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-card-id]'); if (!el) return;
+    const items = [...container.querySelectorAll('[data-card-id]')].map((x) => ({ id: x.dataset.cardId, tier: x.dataset.tier || null }));
+    const index = items.findIndex((x) => x.id === el.dataset.cardId);
+    openCardModal(getCard(el.dataset.cardId), { list: items, index: Math.max(0, index), getCard });
+    if (el.dataset.tier) { _cardModalState.tierClass = 'tier-' + el.dataset.tier; renderCardModal(getCard(el.dataset.cardId)); }
+  });
+  clickToView(document.getElementById('coll-grid'));
+  clickToView(document.getElementById('coll-recent'));
   renderStats(); renderRecent(); render();
 }
 
@@ -36,7 +44,7 @@ function renderStats() {
 function renderRecent() {
   const box = document.getElementById('coll-recent');
   if (!RECENT.length) { box.innerHTML = ''; return; }
-  box.innerHTML = `<div class="rh-title">Recent hits</div><div class="rh-row">${RECENT.slice(0, 16).map((r) => { const c = getCard(r.id); return c ? `<div class="rh-card tier-${r.tier}" data-card-id="${c.id}" title="${escapeHtml(c.name)} · ${TIER_LABEL[r.tier] || r.tier} · ${r.set}">${cardImgHtml(c, 'loading="lazy"')}</div>` : ''; }).join('')}</div>`;
+  box.innerHTML = `<div class="rh-title">Recent hits</div><div class="rh-row">${RECENT.slice(0, 16).map((r) => { const c = getCard(r.id); return c ? `<div class="rh-card tier-${r.tier}" data-card-id="${c.id}" data-tier="${r.tier}" title="${escapeHtml(c.name)} · ${TIER_LABEL[r.tier] || r.tier} · ${r.set}">${cardImgHtml(c, 'loading="lazy"')}</div>` : ''; }).join('')}</div>`;
 }
 function render() {
   const q = document.getElementById('coll-search').value.trim().toLowerCase();
@@ -52,6 +60,6 @@ function render() {
   rows.sort((a, b) => sort === 'recent' ? b.r.updated_at - a.r.updated_at : sort === 'count' ? b.r.count - a.r.count || a.c.id.localeCompare(b.c.id) : sort === 'code' ? a.c.id.localeCompare(b.c.id) : (RARITY_ORDER[a.t] - RARITY_ORDER[b.t]) || a.c.id.localeCompare(b.c.id));
   document.getElementById('coll-count').textContent = `${rows.length} card${rows.length === 1 ? '' : 's'}`;
   const grid = document.getElementById('coll-grid');
-  grid.innerHTML = rows.length ? rows.map(({ r, c, t }) => miniCardHtml(c, { count: r.count, extraClass: 'owned tier-' + t }) + '').join('') : `<p style="color:var(--paper-2)">${OWNED.length ? 'Nothing matches those filters.' : 'No cards yet — go rip some packs!'}</p>`;
+  grid.innerHTML = rows.length ? rows.map(({ r, c, t }) => miniCardHtml(c, { count: r.count, extraClass: 'owned tier-' + t }).replace('data-card-id=', `data-tier="${t}" data-card-id=`)).join('') : `<p style="color:var(--paper-2)">${OWNED.length ? 'Nothing matches those filters.' : 'No cards yet — go rip some packs!'}</p>`;
 }
 init();

@@ -52,21 +52,48 @@ function wire() {
   document.getElementById('back-to-sets').onclick = () => { stopAuto(); showStage('sets'); };
   document.querySelectorAll('.qty-chip').forEach((b) => { b.onclick = () => { qty = Number(b.dataset.qty); document.querySelectorAll('.qty-chip').forEach((x) => x.classList.toggle('on', x === b)); }; });
   document.getElementById('rip-btn').onclick = rip;
-  document.getElementById('flip-next-btn').onclick = () => flipNext();
-  document.getElementById('flip-all-btn').onclick = flipAll;
+  document.getElementById('reveal-btn').onclick = () => reveal();
+  document.getElementById('reveal-all-btn').onclick = revealAll;
   document.getElementById('auto-flip').onchange = (e) => { if (e.target.checked) startAuto(); else stopAuto(); };
   document.getElementById('odds-link').onclick = openOddsModal;
   document.addEventListener('keydown', (e) => {
     const tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea') return;
+    if (document.getElementById('card-modal')) return; // the big viewer has its own keys
     if (document.getElementById('stage-open').style.display === 'none') return;
-    if (e.key === ' ') { e.preventDefault(); if (document.getElementById('pack-wrap').style.display !== 'none') rip(); else flipNext(); }
-    else if (e.key === 'Enter') { e.preventDefault(); if (document.getElementById('pack-wrap').style.display !== 'none') rip(); else flipAll(); }
+    const packVisible = document.getElementById('pack-stage').style.display !== 'none';
+    if (e.key === ' ') { e.preventDefault(); if (packVisible) rip(); else reveal(); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (packVisible) rip(); else revealAll(); }
     else if (e.key === 'Escape') { const m = document.getElementById('results-modal') || document.getElementById('odds-modal'); if (m) m.remove(); }
   });
-  attachCardTooltips(document.getElementById('reveal-row'), getCard);
-  attachCardTooltips(document.getElementById('recent-hits'), getCard);
-  attachCardTooltips(document.getElementById('results-root'), getCard);
+  // click a card anywhere on this page → big viewer
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-card-id]');
+    if (!el || el.closest('#card-modal')) return;
+    if (el.classList.contains('scard') && !el.classList.contains('up')) return; // face-down: not yet
+    if (el.classList.contains('scard') && el.classList.contains('top') && !el.classList.contains('swiped')) return; // top of stack: press reveals
+    const card = getCard(el.dataset.cardId);
+    if (!card) return;
+    const listEl = el.closest('[data-card-list]');
+    if (listEl) {
+      const items = [...listEl.querySelectorAll('[data-card-id]')].filter((x) => !x.classList.contains('scard') || x.classList.contains('up')).map((x) => ({ id: x.dataset.cardId, tier: x.dataset.tier || null }));
+      const index = items.findIndex((x) => x.id === card.id);
+      openCardModal(card, { list: items, index: Math.max(0, index), getCard });
+      if (el.dataset.tier) _cardModalState.tierClass = 'tier-' + el.dataset.tier;
+      renderCardModal(card);
+    } else openCardModal(card, { getCard });
+  });
+  // tilt the pack with the mouse (little bit of physicality)
+  const pack = document.getElementById('pack');
+  const stage = document.getElementById('pack-stage');
+  stage.addEventListener('pointermove', (e) => {
+    if (pack.classList.contains('ripping')) return;
+    const r = pack.getBoundingClientRect();
+    const dx = (e.clientX - (r.left + r.width / 2)) / r.width, dy = (e.clientY - (r.top + r.height / 2)) / r.height;
+    pack.style.setProperty('--tx', `${(-dy * 14).toFixed(2)}deg`); pack.style.setProperty('--ty', `${(dx * 18).toFixed(2)}deg`);
+    pack.style.setProperty('--gx', `${(50 + dx * 60).toFixed(1)}%`);
+  });
+  stage.addEventListener('pointerleave', () => { pack.style.setProperty('--tx', '0deg'); pack.style.setProperty('--ty', '0deg'); });
 }
 function showStage(which) {
   document.getElementById('stage-sets').style.display = which === 'sets' ? '' : 'none';
@@ -88,7 +115,18 @@ function chooseSet(code) {
   document.getElementById('pack-set-code').textContent = selectedSet.set.replace(/^(OP|EB)(\d\d)$/, '$1-$2');
   document.getElementById('pack-art').innerHTML = cover ? cardImgHtml(cover) : '';
   const col = cover && cover.colors && cover.colors[0] ? cover.colors[0] : 'Red';
-  document.getElementById('pack').dataset.color = col;
+  const pack = document.getElementById('pack');
+  pack.dataset.color = col;
+  // official pack photo (relayed by our server) — the foil design is the fallback
+  pack.classList.remove('has-photo');
+  const top = document.getElementById('pack-photo-top'), body = document.getElementById('pack-photo-body');
+  top.removeAttribute('src'); body.removeAttribute('src');
+  if (selectedSet.packImage) {
+    let done = false;
+    body.onload = () => { if (!done) { done = true; top.src = body.src; pack.classList.add('has-photo'); } };
+    body.onerror = () => { pack.classList.remove('has-photo'); };
+    body.src = selectedSet.packImage;
+  }
   resetPackVisual();
   document.getElementById('open-qty').style.display = '';
   document.getElementById('rip-btn').textContent = 'Rip it open!';
@@ -96,11 +134,12 @@ function chooseSet(code) {
 }
 function resetPackVisual() {
   const pack = document.getElementById('pack');
-  pack.classList.remove('shaking', 'torn', 'gone');
-  document.getElementById('pack-wrap').style.display = '';
-  document.getElementById('reveal-wrap').style.display = 'none';
+  pack.classList.remove('grab', 'tearing', 'torn', 'cards-out', 'gone', 'ripping');
+  document.getElementById('pack-stage').style.display = '';
+  document.getElementById('reveal-stage').style.display = 'none';
   document.getElementById('pack-summary').style.display = 'none';
-  document.getElementById('reveal-row').innerHTML = '';
+  document.getElementById('pack-grid').style.display = 'none';
+  document.getElementById('stack').innerHTML = '';
   document.getElementById('rip-btn').disabled = false;
 }
 
@@ -119,83 +158,119 @@ async function rip() {
   }
   current = queue.shift();
   sessionPacks.push(current);
-  flipped = 0;
+  flipped = 0; revealedUp = -1;
   if (window.BGM) BGM.duck(true);
+  await ripAnimation();
+  showStack();
+}
+// the rip: grab → tear runs across the top → the strip peels off → cards rise out → pack drops away
+async function ripAnimation() {
   const pack = document.getElementById('pack');
-  pack.classList.add('shaking'); PackFX.play('shake');
+  pack.classList.add('ripping', 'grab'); PackFX.play('shake');
+  await sleep(380);
+  pack.classList.add('tearing'); PackFX.play('tear');
+  await sleep(620);
+  pack.classList.add('torn'); PackFX.play('slide');
   await sleep(520);
-  pack.classList.remove('shaking'); pack.classList.add('torn'); PackFX.play('tear');
-  await sleep(650);
+  pack.classList.add('cards-out');
+  await sleep(700);
   pack.classList.add('gone');
-  await sleep(250);
-  document.getElementById('pack-wrap').style.display = 'none';
-  showCards();
+  await sleep(320);
+  document.getElementById('pack-stage').style.display = 'none';
 }
 
-function showCards() {
-  const wrap = document.getElementById('reveal-wrap');
-  const row = document.getElementById('reveal-row');
-  wrap.style.display = '';
+// ---------------------------------------------------------------------------------------
+// the stack: one pile, face-down. Reveal = flip the top card; next Reveal swipes it right
+// and flips the next one. The last card gets the build-up.
+// ---------------------------------------------------------------------------------------
+let revealedUp = -1; // index of the card currently face-up on top (-1 = none yet)
+function showStack() {
+  const stage = document.getElementById('reveal-stage');
+  stage.style.display = '';
   document.getElementById('pack-summary').style.display = 'none';
-  row.innerHTML = current.map((c, i) => {
+  document.getElementById('pack-grid').style.display = 'none';
+  const stack = document.getElementById('stack');
+  const n = current.length;
+  stack.innerHTML = current.map((c, i) => {
     const card = getCard(c.id);
-    return `<div class="rcard tier-${c.tier}" data-idx="${i}" data-card-id="${c.id}" style="--i:${i}">
-      <div class="rcard-inner">
+    const jitter = ((i * 37) % 7) - 3; // deterministic tiny rotation so the pile looks real
+    return `<div class="scard tier-${c.tier} ${i === 0 ? 'top' : ''}" data-idx="${i}" data-card-id="${c.id}" data-tier="${c.tier}" style="--z:${n - i}; --lift:${(n - 1 - i) * 0.9}px; --j:${jitter * 0.4}deg; --i:${i}">
+      <div class="scard-inner">
         <div class="face back"><img src="/img/cardback.svg" alt="" draggable="false" /></div>
         <div class="face front">${card ? cardImgHtml(card) : '<div class="fallback">?</div>'}<span class="tier-tag">${TIER_LABEL[c.tier] || c.tier}</span></div>
       </div>
     </div>`;
   }).join('');
-  row.querySelectorAll('.rcard').forEach((el) => { el.onclick = () => flipCard(Number(el.dataset.idx)); });
+  stack.dataset.cardList = '1';
+  document.getElementById('pile-label').textContent = '';
   updateProgress();
-  PackFX.play('slide');
+  const btn = document.getElementById('reveal-btn');
+  btn.disabled = false; btn.textContent = 'Reveal (Space)';
   if (document.getElementById('auto-flip').checked) startAuto();
 }
 function updateProgress() {
   const left = queue.length;
-  document.getElementById('reveal-progress').innerHTML = `<span>Pack ${sessionPacks.length}${sessionPacks.length + left > 1 ? ` of ${sessionPacks.length + left}` : ''}</span><span class="dots">${current.map((c, i) => `<i class="${i < flipped ? 'on tier-' + c.tier : ''}"></i>`).join('')}</span><span>${flipped}/${current.length} flipped</span>`;
+  document.getElementById('reveal-progress').innerHTML = `<span>Pack ${sessionPacks.length}${sessionPacks.length + left > 1 ? ` of ${sessionPacks.length + left}` : ''}</span><span class="dots">${current.map((c, i) => `<i class="${i < flipped ? 'on tier-' + c.tier : ''}"></i>`).join('')}</span><span>${flipped}/${current.length} revealed</span>`;
 }
 
-// flip a specific card (only in order: you can't skip ahead of the reveal — keeps the build-up)
-async function flipCard(idx) {
+// One press: swipe the face-up card off to the right (if any), then flip the next one.
+async function reveal() {
   if (!current || flipping) return;
-  const next = flipped;
-  if (idx !== next) { // clicking any unflipped card flips the next one in line
-    if (idx < next) return;
-    idx = next;
-  }
-  const el = document.querySelector(`.rcard[data-idx="${idx}"]`);
-  if (!el) return;
-  const c = current[idx];
+  const n = current.length;
+  if (revealedUp >= n - 1 && flipped >= n) { await finishPack(); return; }
   flipping = true;
-  const isLast = idx === current.length - 1;
-  const level = TIER_LEVEL[c.tier] || 0;
-  if (isLast) {
-    // the build-up: everything else is out, the last card glows and the drums roll
-    el.classList.add('charging'); PackFX.play('riser', 1.4);
-    await sleep(1400);
-    el.classList.remove('charging');
-  } else if (level >= 2) {
-    el.classList.add('charging'); PackFX.play('riser', 0.9);
-    await sleep(900);
-    el.classList.remove('charging');
+  const btn = document.getElementById('reveal-btn'); btn.disabled = true;
+  // 1) swipe the current face-up card to the pile
+  if (revealedUp >= 0) {
+    const cur = document.querySelector(`.scard[data-idx="${revealedUp}"]`);
+    if (cur) { cur.classList.remove('top'); cur.classList.add('swiped'); cur.style.setProperty('--px', `${revealedUp * 9}px`); cur.style.setProperty('--py', `${(revealedUp % 3) * 4}px`); cur.style.setProperty('--r', `${((revealedUp * 53) % 17) - 8}deg`); }
+    PackFX.play('slide');
+    await sleep(revealedUp === n - 1 ? 350 : 220);
+    document.getElementById('pile-label').textContent = `${revealedUp + 1} card${revealedUp === 0 ? '' : 's'} on the pile`;
   }
-  el.classList.add('flipped');
+  // 2) flip the next card
+  const idx = revealedUp + 1;
+  const el = document.querySelector(`.scard[data-idx="${idx}"]`);
+  const c = current[idx];
+  el.classList.add('top');
+  const isLast = idx === n - 1;
+  const level = TIER_LEVEL[c.tier] || 0;
+  if (isLast) { el.classList.add('charging'); PackFX.play('riser', 1.5); await sleep(1500); el.classList.remove('charging'); }
+  else if (level >= 2) { el.classList.add('charging'); PackFX.play('riser', 0.9); await sleep(900); el.classList.remove('charging'); }
+  el.classList.add('up');
   if (isLast && level <= 1 && c.tier !== 'L') PackFX.play('womp'); else PackFX.play('flip', c.tier);
   if (level >= 2) hitEffects(el, c.tier, level);
-  flipped++;
+  revealedUp = idx; flipped = idx + 1;
   updateProgress();
-  await sleep(level >= 3 ? 700 : 260);
+  await sleep(level >= 3 ? 700 : 300);
   flipping = false;
-  if (flipped >= current.length) packDone();
+  btn.disabled = false;
+  btn.textContent = flipped >= n ? 'Done — see the pack (Space)' : 'Reveal (Space)';
+  if (flipped >= n && document.getElementById('auto-flip').checked) { setTimeout(() => { if (!flipping) finishPack(); }, 900); }
 }
-function flipNext() { if (current && flipped < current.length) flipCard(flipped); }
-async function flipAll() {
+async function revealAll() {
   stopAuto();
-  while (current && flipped < current.length) { await flipCard(flipped); }
+  while (current && flipped < current.length) { await reveal(); }
+  await finishPack();
 }
-function startAuto() { stopAuto(); autoTimer = setInterval(() => { if (!flipping && current && flipped < current.length) flipCard(flipped); }, 750); }
+function startAuto() { stopAuto(); autoTimer = setInterval(() => { if (!flipping && current && flipped < current.length) reveal(); }, 900); }
 function stopAuto() { if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } }
+
+// after the last card: swipe it, lay all 12 out (clickable), show the summary
+async function finishPack() {
+  if (!current || flipping) return;
+  flipping = true;
+  stopAuto();
+  const last = document.querySelector(`.scard[data-idx="${current.length - 1}"]`);
+  if (last && !last.classList.contains('swiped')) { last.classList.remove('top'); last.classList.add('swiped'); last.style.setProperty('--px', `${(current.length - 1) * 9}px`); PackFX.play('slide'); await sleep(350); }
+  document.getElementById('stack-area').style.display = 'none';
+  const grid = document.getElementById('pack-grid');
+  grid.style.display = '';
+  grid.dataset.cardList = '1';
+  grid.innerHTML = current.map((c, i) => { const card = getCard(c.id); return `<div class="pcard tier-${c.tier}" data-card-id="${c.id}" data-tier="${c.tier}" style="--i:${i}" title="Click to view">${card ? cardImgHtml(card) : ''}<span class="tier-tag">${TIER_LABEL[c.tier] || c.tier}</span></div>`; }).join('');
+  flipping = false;
+  packDone();
+}
 
 function hitEffects(el, tier, level) {
   confetti(el, level, tier);
@@ -239,29 +314,31 @@ function packDone() {
       <a class="btn small secondary" href="/collection.html">Collection →</a>
     </div>`;
   const on = (id, fn) => { const b = document.getElementById(id); if (b) b.onclick = fn; };
-  on('next-pack-btn', () => { resetPackVisual(); rip(); });
-  on('again-btn', () => { resetPackVisual(); document.getElementById('open-qty').style.display = ''; document.getElementById('rip-btn').textContent = 'Rip another!'; });
+  on('next-pack-btn', () => { resetPackVisual(); document.getElementById('stack-area').style.display = ''; rip(); });
+  on('again-btn', () => { resetPackVisual(); document.getElementById('stack-area').style.display = ''; document.getElementById('open-qty').style.display = ''; document.getElementById('rip-btn').textContent = 'Rip another!'; });
   on('results-btn', showResults);
   on('rip-rest-btn', ripRest);
   loadRecent();
   if (!left) { if (window.BGM) BGM.duck(false); if (sessionPacks.length > 1) setTimeout(showResults, 400); }
 }
 async function ripRest() {
-  // fast mode for boxes: open remaining packs with instant flips (hits still get a quick fanfare)
+  // fast mode for boxes: remaining packs get laid out straight away (hits still get their fanfare)
   const auto = document.getElementById('auto-flip');
   while (queue.length) {
     resetPackVisual();
-    current = queue.shift(); sessionPacks.push(current); flipped = 0;
-    document.getElementById('pack-wrap').style.display = 'none';
-    showCards();
+    current = queue.shift(); sessionPacks.push(current); flipped = current.length; revealedUp = current.length - 1;
+    document.getElementById('pack-stage').style.display = 'none';
+    document.getElementById('reveal-stage').style.display = '';
+    document.getElementById('stack-area').style.display = 'none';
+    updateProgress();
+    const grid = document.getElementById('pack-grid');
+    grid.style.display = ''; grid.dataset.cardList = '1';
+    grid.innerHTML = current.map((c, i) => { const card = getCard(c.id); return `<div class="pcard tier-${c.tier}" data-card-id="${c.id}" data-tier="${c.tier}" style="--i:${i}">${card ? cardImgHtml(card) : ''}<span class="tier-tag">${TIER_LABEL[c.tier] || c.tier}</span></div>`; }).join('');
     for (let i = 0; i < current.length; i++) {
-      const el = document.querySelector(`.rcard[data-idx="${i}"]`);
-      el.classList.add('flipped');
       const lvl = TIER_LEVEL[current[i].tier] || 0;
-      if (lvl >= 2) { PackFX.play('flip', current[i].tier); hitEffects(el, current[i].tier, lvl); await sleep(650); } else await sleep(35);
-      flipped++; updateProgress();
+      if (lvl >= 2) { const el = grid.querySelector(`.pcard[style*="--i:${i}"]`) || grid.children[i]; PackFX.play('flip', current[i].tier); hitEffects(el, current[i].tier, lvl); await sleep(650); }
     }
-    await sleep(500);
+    await sleep(450);
   }
   auto.checked = false;
   packDone();
@@ -281,12 +358,11 @@ function showResults() {
     <h2>${sessionPacks.length} pack${sessionPacks.length === 1 ? '' : 's'} of ${escapeHtml(selectedSet.name)} <small>${all.length} cards</small></h2>
     <div class="res-tiers">${order.filter((t) => byTier[t]).map((t) => `<span class="ds-tag tier-${t}">${TIER_LABEL[t]} <b>${byTier[t]}</b></span>`).join('')}</div>
     <h3>${hits.length ? `Hits (${hits.length})` : 'No hits — the Grand Line is cruel'}</h3>
-    <div class="res-grid">${sortedHits.map((h) => { const c = getCard(h.id); return c ? `<div class="res-card tier-${h.tier}" data-card-id="${c.id}">${cardImgHtml(c, 'loading="lazy"')}<span class="tier-tag">${TIER_LABEL[h.tier]}</span></div>` : ''; }).join('')}</div>
+    <div class="res-grid" data-card-list="1">${sortedHits.map((h) => { const c = getCard(h.id); return c ? `<div class="res-card tier-${h.tier}" data-card-id="${c.id}" data-tier="${h.tier}" title="Click to view">${cardImgHtml(c, 'loading="lazy"')}<span class="tier-tag">${TIER_LABEL[h.tier]}</span></div>` : ''; }).join('')}</div>
     <div class="ps-actions" style="margin-top:14px;"><button class="btn gold" data-close>Keep ripping</button><a class="btn secondary" href="/collection.html">Go to my collection</a></div>
   </div>`;
   document.body.appendChild(wrap);
   wrap.addEventListener('click', (e) => { if (e.target === wrap || e.target.closest('[data-close]')) wrap.remove(); });
-  attachCardTooltips(wrap, getCard);
   if (hits.length) PackFX.play('coin');
 }
 
@@ -295,7 +371,7 @@ async function loadRecent() {
     const { recent, signedIn } = await API.get('/api/collection');
     const box = document.getElementById('recent-hits');
     if (!signedIn || !recent.length) { box.innerHTML = ''; return; }
-    box.innerHTML = `<div class="rh-title">Recent hits</div><div class="rh-row">${recent.slice(0, 14).map((r) => { const c = getCard(r.id); return c ? `<div class="rh-card tier-${r.tier}" data-card-id="${c.id}" title="${escapeHtml(c.name)} · ${TIER_LABEL[r.tier] || r.tier}">${cardImgHtml(c, 'loading="lazy"')}</div>` : ''; }).join('')}</div>`;
+    box.innerHTML = `<div class="rh-title">Recent hits <span class="ds-muted">· click to view</span></div><div class="rh-row" data-card-list="1">${recent.slice(0, 14).map((r) => { const c = getCard(r.id); return c ? `<div class="rh-card tier-${r.tier}" data-card-id="${c.id}" data-tier="${r.tier}" title="${escapeHtml(c.name)} · ${TIER_LABEL[r.tier] || r.tier}">${cardImgHtml(c, 'loading="lazy"')}</div>` : ''; }).join('')}</div>`;
   } catch (e) { /* ignore */ }
 }
 

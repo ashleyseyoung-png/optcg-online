@@ -253,3 +253,67 @@ function toast(msg, kind) {
 }
 
 document.addEventListener('DOMContentLoaded', () => { loadUser(); });
+
+// ---- Big card viewer (click a card → admire the artwork) -------------------------------
+// openCardModal(card, { list, index }) — with a list you get ◀ ▶ / arrow keys to browse.
+let _cardModalState = null;
+function openCardModal(card, opts = {}) {
+  if (!card) return;
+  closeCardModal();
+  _cardModalState = { list: opts.list || null, index: opts.index || 0, getCard: opts.getCard || null };
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop card-viewer'; wrap.id = 'card-modal';
+  wrap.innerHTML = `<div class="cv-inner">
+      <button class="cv-nav prev" data-cv-prev title="Previous (←)">‹</button>
+      <div class="cv-card" id="cv-card"></div>
+      <div class="cv-info" id="cv-info"></div>
+      <button class="cv-nav next" data-cv-next title="Next (→)">›</button>
+      <button class="cv-close" data-cv-close title="Close (Esc)">✕</button>
+    </div>`;
+  document.body.appendChild(wrap);
+  renderCardModal(card);
+  wrap.addEventListener('click', (e) => {
+    if (e.target === wrap || e.target.closest('[data-cv-close]')) { closeCardModal(); return; }
+    if (e.target.closest('[data-cv-prev]')) cardModalStep(-1);
+    if (e.target.closest('[data-cv-next]')) cardModalStep(1);
+  });
+  if (window.SFX) SFX.play('open');
+}
+function renderCardModal(card) {
+  const st = _cardModalState;
+  const box = document.getElementById('cv-card');
+  box.innerHTML = `<div class="cv-frame ${cardColorClass(card)} ${st && st.tierClass ? st.tierClass : ''}">${cardImgHtml(card)}</div>`;
+  const stats = [
+    card.type,
+    card.cost !== null && card.cost !== undefined ? `Cost ${card.cost}` : null,
+    card.power !== null && card.power !== undefined ? `Power ${card.power}` : null,
+    card.counter ? `Counter +${card.counter}` : null,
+    card.life ? `Life ${card.life}` : null,
+    card.colors && card.colors.join('/'),
+    card.attribute,
+    card.rarity,
+  ].filter(Boolean).join(' · ');
+  document.getElementById('cv-info').innerHTML = `
+    <div class="cv-name">${escapeHtml(card.name)}${card.variant ? ` <span class="badge-variant">${escapeHtml(variantShort(card.variant))}</span>` : ''}</div>
+    <div class="cv-meta">${escapeHtml(card.id)}${card.variant ? ' · ' + escapeHtml(card.variant) : ''}${card.types && card.types.length ? ' · ' + escapeHtml(card.types.join(' / ')) : ''}</div>
+    <div class="cv-stats">${escapeHtml(stats)}</div>
+    <div class="cv-text">${escapeHtml(card.text || '')}</div>
+    ${st && st.list ? `<div class="cv-count">${st.index + 1} / ${st.list.length}</div>` : ''}`;
+  const hasList = st && st.list && st.list.length > 1;
+  document.querySelectorAll('#card-modal .cv-nav').forEach((b) => { b.style.display = hasList ? '' : 'none'; });
+}
+function cardModalStep(dir) {
+  const st = _cardModalState;
+  if (!st || !st.list || st.list.length < 2) return;
+  st.index = (st.index + dir + st.list.length) % st.list.length;
+  const item = st.list[st.index];
+  const card = typeof item === 'string' ? (st.getCard ? st.getCard(item) : null) : (item && item.id && st.getCard ? st.getCard(item.id) : item);
+  if (card) { st.tierClass = item && item.tier ? 'tier-' + item.tier : ''; renderCardModal(card); if (window.SFX) SFX.play('flip'); }
+}
+function closeCardModal() { const m = document.getElementById('card-modal'); if (m) m.remove(); _cardModalState = null; }
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('card-modal')) return;
+  if (e.key === 'Escape') { closeCardModal(); e.stopPropagation(); }
+  else if (e.key === 'ArrowLeft') cardModalStep(-1);
+  else if (e.key === 'ArrowRight') cardModalStep(1);
+});

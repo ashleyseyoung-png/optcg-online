@@ -49,30 +49,43 @@
   </div>
 
   <div class="rip-arena" id="rip-arena">
-    <!-- the sealed pack -->
-    <div class="pack-wrap" id="pack-wrap">
-      <div class="pack" id="pack">
-        <div class="pack-tear" id="pack-tear"></div>
-        <div class="pack-body">
-          <div class="pack-shine"></div>
-          <div class="pack-art" id="pack-art"></div>
-          <div class="pack-label"><span class="pack-brand">GRAND LINE TCG</span><span class="pack-set" id="pack-set-name"></span><span class="pack-code" id="pack-set-code"></span><span class="pack-count">12 CARDS</span></div>
+    <!-- the sealed pack (official product photo; foil fallback if a set has none) -->
+    <div class="pack-stage" id="pack-stage">
+      <div class="pack3d" id="pack" data-color="Red">
+        <div class="pack-piece pack-body" id="pack-body">
+          <img class="pack-photo" id="pack-photo-body" alt="" draggable="false" />
+          <div class="pack-foil" id="pack-foil-body">
+            <div class="pack-shine"></div>
+            <div class="pack-art" id="pack-art"></div>
+            <div class="pack-label"><span class="pack-brand">GRAND LINE TCG</span><span class="pack-set" id="pack-set-name"></span><span class="pack-code" id="pack-set-code"></span><span class="pack-count">12 CARDS</span></div>
+          </div>
         </div>
+        <div class="pack-piece pack-top" id="pack-top">
+          <img class="pack-photo" id="pack-photo-top" alt="" draggable="false" />
+          <div class="pack-foil top" id="pack-foil-top"></div>
+        </div>
+        <div class="tear-spark" id="tear-spark"></div>
+        <div class="pack-cards" id="pack-cards"><i></i><i></i><i></i><i></i><i></i></div>
       </div>
       <button class="btn gold big rip-btn" id="rip-btn">Rip it open!</button>
-      <div class="rip-hint" id="rip-hint">Space / Enter also rips</div>
+      <div class="rip-hint" id="rip-hint">Space / Enter also rips · drag your mouse over the pack to tilt it</div>
     </div>
 
-    <!-- the cards -->
-    <div class="reveal-wrap" id="reveal-wrap" style="display:none;">
+    <!-- the stack reveal -->
+    <div class="reveal-stage" id="reveal-stage" style="display:none;">
       <div class="reveal-progress" id="reveal-progress"></div>
-      <div class="reveal-row" id="reveal-row"></div>
+      <div class="stack-area" id="stack-area">
+        <div class="stack" id="stack"></div>
+        <div class="pile-label" id="pile-label"></div>
+      </div>
       <div class="reveal-actions" id="reveal-actions">
-        <button class="btn small secondary" id="flip-next-btn">Flip next (Space)</button>
-        <button class="btn small secondary" id="flip-all-btn">Flip all (Enter)</button>
-        <label class="auto-flip"><input type="checkbox" id="auto-flip" /> Auto-flip</label>
+        <button class="btn gold reveal-btn" id="reveal-btn">Reveal (Space)</button>
+        <button class="btn small secondary" id="reveal-all-btn">Reveal all (Enter)</button>
+        <label class="auto-flip"><input type="checkbox" id="auto-flip" /> Auto-reveal</label>
+        <span class="reveal-hint">click any revealed card to see it big</span>
       </div>
       <div class="pack-summary" id="pack-summary" style="display:none;"></div>
+      <div class="pack-grid" id="pack-grid" style="display:none;"></div>
     </div>
   </div>
 

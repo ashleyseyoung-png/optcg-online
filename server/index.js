@@ -61,5 +61,6 @@ server.listen(PORT, () => {
   // Card art relay cache + once-a-day background refresh of the card list (new sets / alt arts).
   const { DATA_DIR } = require('./db');
   cards.setImageCacheDir(DATA_DIR);
+  packs.setImageCacheDir(DATA_DIR);
   cards.scheduleCardSync(DATA_DIR);
 });
