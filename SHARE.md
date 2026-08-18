@@ -53,6 +53,17 @@ Later updates: whenever you unzip a new version of the app over the folder, open
 
 The one catch of the free tier: it "sleeps" after 15 minutes with nobody on it (first visitor waits ~30–60 s for it to wake up), and because the free tier has no persistent disk, accounts/decks made on the site are wiped when it redeploys or restarts. Fine for testing with friends — everyone can just use starter decks / guest mode. If that gets annoying, upgrading that same Render service to **Starter ($7/mo)** and adding a Disk (mount `/data`, then set the `DATA_DIR=/data` variable — it's already there commented-out in `render.yaml`) makes everything persist.
 
+### If the Render deploy fails
+
+Open the service in Render → **Logs** tab, and look at the last few red lines.
+
+| What the log says | What it means | Fix |
+|---|---|---|
+| `No such built-in module: node:sqlite` or `Cannot find module 'node:sqlite'` | Render is running a Node older than 22.13 | The included `render.yaml` / `.node-version` now pin Node 22. Make sure both files are in your repo, then **Manual Deploy → Clear build cache & deploy**. |
+| `Exited with status 1` right after "Loaded 2512 cards" | Something crashed at startup | Copy the lines above it — that's the real error. |
+| Build fails on `npm install` | Nothing to install (this app has no dependencies), so this usually means the repo is missing `package.json` at its top level | Check that GitHub shows `package.json`, `server/`, `public/` at the *root* of the repo, not nested inside another folder. |
+| Deploy "live" but the page won't load | Free instance waking up | Wait 30–60 seconds and refresh. |
+
 ---
 
 ## Option 3 — Permanent + remembers everyone's decks (~$5/mo)

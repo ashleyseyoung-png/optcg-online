@@ -1,17 +1,19 @@
-# Render Blueprint — lets you deploy this app on Render with one click:
-# push the repo to GitHub, then in Render: New → Blueprint → pick the repo. Done.
+# Render Blueprint — deploy with: Render dashboard → New + → Blueprint → pick this repo → Apply.
 services:
   - type: web
     name: grand-line-tcg
     runtime: node
     plan: free
-    buildCommand: "echo no build step"
-    startCommand: node server/index.js
+    buildCommand: npm install          # no dependencies, so this is effectively a no-op
+    startCommand: npm start
     healthCheckPath: /healthz
     autoDeploy: true
     envVars:
+      # MUST be >= 22.13 — that's the first Node where `node:sqlite` works without a CLI flag.
+      # "22" resolves to the newest 22.x release.
       - key: NODE_VERSION
-        value: 22.12.0
-      # Uncomment (and add a Disk mounted at /data on a paid plan) to persist accounts/decks across deploys:
+        value: "22"
+      # Uncomment BOTH lines below (and add a Disk mounted at /data on a paid plan)
+      # to keep accounts + saved decks across deploys:
       # - key: DATA_DIR
       #   value: /data
