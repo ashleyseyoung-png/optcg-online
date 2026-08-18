@@ -34,6 +34,7 @@
     </div>
     <div class="tb-center"><span class="turn-pill" id="turn-indicator"></span></div>
     <div class="tb-right">
+      <button class="icon-btn" id="settings-btn" title="Settings">⚙️</button>
       <button class="icon-btn" data-sfx-toggle title="Toggle sounds">🔊</button>
       <button class="icon-btn" id="toggle-side-btn" title="Log & chat">💬</button>
       <a class="icon-btn" href="/play.html" title="Leave table">🏠</a>
@@ -125,6 +126,7 @@
       <button class="pill primary big" id="end-turn-btn">End Turn</button>
       <div class="bb-small">
         <button class="pill" id="attach-don-btn">Attach DON!!</button>
+        <button class="pill" id="attach-all-btn" style="display:none;" title="Attach every active DON!! to one card">All DON!!</button>
         <button class="pill" id="toolbox-btn">Toolbox</button>
       </div>
     </div>
@@ -135,7 +137,9 @@
 <div id="fly-layer"></div>
 <div id="gameover-root"></div>
 
+<script src="/js/settings.js"></script>
 <script src="/js/sfx.js"></script>
+<script src="/js/bgm.js"></script>
 <script src="/js/common.js"></script>
 <script src="/js/game.js"></script>
 </body>

@@ -88,7 +88,7 @@ function connect() {
       toast(msg.message);
     }
   };
-  ws.onopen = () => { reconnectTries = 0; };
+  ws.onopen = () => { reconnectTries = 0; sendPrefs(); };
   ws.onclose = () => {
     if (STATE && STATE.winner !== null) return;
     if (reconnectTries >= 6) { toast('Lost connection to the table. Reload the page to try again.'); return; }
@@ -98,6 +98,12 @@ function connect() {
   };
 }
 let reconnectTries = 0;
+const SET = (k) => (window.Settings ? Settings.get(k) : ({ autoDraw: true, confirmEndTurn: true, dynamicPlaysheets: true })[k] || false);
+function sendPrefs() { send('setPrefs', { prefs: { autoDraw: !!SET('autoDraw'), autoSkipTrigger: !!SET('autoSkipTrigger') } }); }
+if (window.Settings) Settings.onChange((k) => { if (k === 'autoDraw' || k === 'autoSkipTrigger') sendPrefs(); if (STATE) render(); });
+let endTurnArmed = false;      // "Confirm End Turn": first click arms, second click ends
+let pendingDonAttach = null;   // "Confirm DON!! Attach": { target, count } waiting for OK
+let pendingCounter = null;     // "Confirm Before Countering": { handIndex, name }
 
 function send(type, payload) {
   if (ws && ws.readyState === 1) ws.send(JSON.stringify(Object.assign({ type }, payload || {})));
@@ -124,8 +130,14 @@ function wireStaticUi() {
   wirePreview(hand);
   wirePreview(document.getElementById('prompt-root')); // e.g. the revealed Trigger card
 
-  document.getElementById('end-turn-btn').onclick = () => { if (isMyMain()) send('endMainPhase'); };
-  document.getElementById('attach-don-btn').onclick = () => { attachDonMode = !attachDonMode; selectedAttacker = null; render(); };
+  document.getElementById('end-turn-btn').onclick = () => {
+    if (!isMyMain()) return;
+    if (SET('confirmEndTurn') && !endTurnArmed) { endTurnArmed = true; render(); setTimeout(() => { if (endTurnArmed) { endTurnArmed = false; if (STATE) render(); } }, 4000); return; }
+    endTurnArmed = false; send('endMainPhase');
+  };
+  document.getElementById('attach-don-btn').onclick = () => { attachDonMode = attachDonMode ? false : true; selectedAttacker = null; render(); };
+  document.getElementById('attach-all-btn').onclick = () => { attachDonMode = attachDonMode === 'all' ? false : 'all'; selectedAttacker = null; render(); };
+  document.getElementById('settings-btn').onclick = () => openSettingsModal();
   document.getElementById('toolbox-btn').onclick = () => setTab(toolboxMode ? 'log' : 'tools');
   document.querySelectorAll('.side-tab').forEach((b) => { b.onclick = () => setTab(b.dataset.tab); });
   document.getElementById('toggle-side-btn').onclick = () => { sideHidden = !sideHidden; applyDrawer(); if (STATE) render(); };
@@ -215,7 +227,7 @@ function onBoardTargetClick(role, side, idxStr, el) {
   if (attachDonMode) {
     if (side !== 'self' || (role !== 'leader' && role !== 'char')) return;
     if (me.cost.active <= 0) { toast('No active DON!! left to attach.'); return; }
-    send('attachDon', { count: 1, target: role === 'leader' ? 'leader' : idx });
+    requestDonAttach(role === 'leader' ? 'leader' : idx, attachDonMode === 'all' ? me.cost.active : 1);
     return;
   }
 
@@ -264,6 +276,17 @@ function declareAttack(attacker, target) {
   selectedAttacker = null;
 }
 
+// Attach DON!! — goes through a confirm step if "Confirm DON!! Attach" is on.
+function requestDonAttach(target, count) {
+  if (SET('confirmDonAttach')) { pendingDonAttach = { target, count }; render(); return; }
+  send('attachDon', { count, target });
+}
+function targetLabel(target) {
+  const me = currentMe();
+  if (target === 'leader') { const l = getCard(me.leaderId); return l ? l.name + ' (Leader)' : 'your Leader'; }
+  const c = me.characterArea[target]; const d = c && getCard(c.cardId); return d ? d.name : 'that Character';
+}
+
 function onHandCardClick(idx) {
   const me = currentMe(), meSeat = STATE.you;
   const card = getCard(me.hand[idx]);
@@ -271,7 +294,10 @@ function onHandCardClick(idx) {
   if (awaitingHandDiscard) { send('manualAction', { action: { type: 'moveHandToTrash', handIndex: idx } }); awaitingHandDiscard = false; return; }
   if (STATE.pendingBattle && STATE.pendingBattle.step === 'counter' && other(STATE.pendingBattle.attackerSeat) === meSeat) {
     if (card.text && /\[Counter\]/.test(card.text)) { send('playCounterEvent', { handIndex: idx }); return; }
-    if (card.type === 'Character' && card.counter) { send('playCounterCharacter', { handIndex: idx }); return; }
+    if (card.type === 'Character' && card.counter) {
+      if (SET('confirmCounter')) { pendingCounter = { handIndex: idx, name: card.name, counter: card.counter }; render(); return; }
+      send('playCounterCharacter', { handIndex: idx }); return;
+    }
     toast('That card has no Counter to use here.');
     return;
   }
@@ -397,7 +423,7 @@ function dropTargetAt(x, y) {
 function performDrop(t) {
   if (!t) return;
   if (t.kind === 'play') onHandCardClick(drag.payload.handIndex);
-  else if (t.kind === 'don') { if (currentMe().cost.active > 0) send('attachDon', { count: 1, target: t.role === 'leader' ? 'leader' : Number(t.idx) }); }
+  else if (t.kind === 'don') { if (currentMe().cost.active > 0) requestDonAttach(t.role === 'leader' ? 'leader' : Number(t.idx), 1); }
   else if (t.kind === 'attack') declareAttack(drag.payload, t.role === 'leader' ? 'leader' : Number(t.idx));
 }
 
@@ -450,7 +476,9 @@ function morphEl(fn, tn) {
 // ---------- rendering ----------
 function render() {
   if (!STATE) return;
-  if (STATE.turnPlayer !== STATE.you) { attachDonMode = false; selectedAttacker = null; }
+  if (STATE.turnPlayer !== STATE.you) { attachDonMode = false; selectedAttacker = null; endTurnArmed = false; pendingDonAttach = null; }
+  if (!STATE.pendingBattle || STATE.pendingBattle.step !== 'counter') pendingCounter = null;
+  if (STATE.pendingBattle && STATE.pendingBattle.step !== 'block') autoSkippedBlockKey = null;
   const effKey = STATE.pendingEffect ? `${STATE.pendingEffect.seat}:${STATE.pendingEffect.cardName}:${STATE.pendingEffect.text}` : null;
   if (effKey !== lastEffectKey) { effectSelected = []; lastEffectKey = effKey; }
   const me = currentMe(), opp = currentOpp();
@@ -471,6 +499,12 @@ function render() {
   morph(oppMat, renderMat(opp, false, hl));
   morph(meMat, renderMat(me, true, hl));
   const live = STATE.phase !== 'mulligan' && STATE.winner === null;
+  // "Dynamic Playsheets": tint each half of the table in that player's Leader color
+  const dyn = SET('dynamicPlaysheets');
+  const sheetOf = (p) => { const l = getCard(p.leaderId); return dyn && l && l.colors && l.colors[0] ? l.colors[0] : null; };
+  const so = sheetOf(opp), sm = sheetOf(me);
+  if (so) oppMat.dataset.sheet = so; else delete oppMat.dataset.sheet;
+  if (sm) meMat.dataset.sheet = sm; else delete meMat.dataset.sheet;
   oppMat.classList.toggle('active', live && STATE.turnPlayer === opp.seat);
   oppMat.classList.toggle('idle', live && STATE.turnPlayer !== opp.seat);
   meMat.classList.toggle('active', live && STATE.turnPlayer === me.seat);
@@ -628,7 +662,14 @@ function renderHand(me) {
 
 function renderLog() {
   const el = document.getElementById('game-log');
-  const html = STATE.log.map((e, i) => `<div class="entry${e.ts > lastLogTs ? ' new' : ''}" data-key="lg${e.ts}-${i}">${escapeHtml(e.text)}</div>`).reverse().join('');
+  const html = STATE.log.map((e, i) => {
+    const m = /^💬 (.+?): ([\s\S]*)$/.exec(e.text);
+    if (m) {
+      const mine = STATE.players[STATE.you] && m[1] === STATE.players[STATE.you].username;
+      return `<div class="entry chat${mine ? ' mine' : ' theirs'}${e.ts > lastLogTs ? ' new' : ''}" data-key="lg${e.ts}-${i}"><span class="chat-who">${escapeHtml(m[1])}</span><span class="chat-bubble">${escapeHtml(m[2])}</span></div>`;
+    }
+    return `<div class="entry${e.ts > lastLogTs ? ' new' : ''}" data-key="lg${e.ts}-${i}">${escapeHtml(e.text)}</div>`;
+  }).reverse().join('');
   morph(el, html);
   if (STATE.log.length) lastLogTs = Math.max(lastLogTs, STATE.log[STATE.log.length - 1].ts);
 }
@@ -643,6 +684,9 @@ function triggerText(card) {
   return (cut > 0 ? rest.slice(0, cut) : rest).trim();
 }
 
+let autoSkippedBlockKey = null;
+function battleKey(b) { return `${b.attackerSeat}:${b.attacker}:${b.target}:${STATE.turnNumber}:${STATE.log.length}`; }
+
 function renderPrompts(me, opp) {
   const root = document.getElementById('prompt-root');
   const meSeat = STATE.you;
@@ -654,6 +698,20 @@ function renderPrompts(me, opp) {
       <button class="btn small gold" id="prompt-keep">Keep Hand</button><button class="btn small secondary" id="prompt-mull">Mulligan</button></div>`;
   } else if (STATE.phase === 'mulligan') {
     html = `<div class="prompt-banner"><span class="txt">Waiting for ${oppName} to decide on their mulligan…</span></div>`;
+  } else if (STATE.pendingDraw === meSeat && STATE.phase === 'draw') {
+    html = `<div class="prompt-banner"><span class="txt"><b>Draw Phase.</b> Draw your card for the turn.</span>
+      <button class="btn small gold pulse" id="prompt-draw">Draw</button></div>`;
+  } else if (STATE.pendingDraw !== null && STATE.pendingDraw !== undefined && STATE.phase === 'draw') {
+    html = `<div class="prompt-banner"><span class="txt">${oppName} is drawing…</span></div>`;
+  } else if (STATE.pendingTrigger && STATE.pendingTrigger.seat === meSeat && STATE.pendingTrigger.noTrigger) {
+    const c = getCard(STATE.pendingTrigger.cardId);
+    html = `<div class="prompt-banner trigger-reveal no-trigger">
+      <div class="reveal-card" ${c ? `data-card-id="${escapeHtml(c.id)}"` : ''}>${c ? cardImgHtml(c) : '<div class="fallback">?</div>'}</div>
+      <div class="reveal-body">
+        <div class="reveal-title">Life card: <b>${c ? escapeHtml(c.name) : '?'}</b> — no [Trigger].</div>
+        <div class="reveal-text">${c ? escapeHtml(c.text || '') : ''}</div>
+        <div class="reveal-actions"><button class="btn small gold" id="prompt-trig-no">Add to Hand</button></div>
+      </div></div>`;
   } else if (STATE.pendingTrigger && STATE.pendingTrigger.seat === meSeat) {
     const c = getCard(STATE.pendingTrigger.cardId);
     html = `<div class="prompt-banner trigger-reveal">
@@ -664,7 +722,7 @@ function renderPrompts(me, opp) {
         <div class="reveal-actions"><button class="btn small gold" id="prompt-trig-yes">Activate Trigger</button><button class="btn small secondary" id="prompt-trig-no">Add to Hand</button></div>
       </div></div>`;
   } else if (STATE.pendingTrigger) {
-    html = `<div class="prompt-banner"><span class="txt">${oppName} revealed a [Trigger] card — deciding…</span></div>`;
+    html = `<div class="prompt-banner"><span class="txt">${oppName} is looking at the life card they took…</span></div>`;
   } else if (STATE.pendingEffect && STATE.pendingEffect.seat === meSeat) {
     const max = STATE.pendingEffect.max;
     html = `<div class="prompt-banner"><span class="txt"><b>${escapeHtml(STATE.pendingEffect.cardName)}:</b> ${escapeHtml(STATE.pendingEffect.text)}<br>Click up to ${max} highlighted target${max === 1 ? '' : 's'} (${effectSelected.length}/${max} selected).</span>
@@ -676,10 +734,18 @@ function renderPrompts(me, opp) {
     const iDefend = other(b.attackerSeat) === meSeat;
     if (b.step === 'block' && iDefend) {
       const n = me.characterArea.filter((c) => c && !c.rested && getCard(c.cardId).keywords.includes('Blocker')).length;
+      if (!n && SET('autoSkipBlock')) {
+        // "Auto Skip Block": nothing could block, so don't make the player click through
+        if (!autoSkippedBlockKey || autoSkippedBlockKey !== battleKey(b)) { autoSkippedBlockKey = battleKey(b); send('respondBlock', { blockerIndex: null }); }
+        html = `<div class="prompt-banner"><span class="txt">You're being attacked — no Blocker, skipping to the Counter Step…</span></div>`;
+      } else
       html = `<div class="prompt-banner"><span class="txt">You're being attacked! ${n ? `Click a highlighted <b>[Blocker]</b> to redirect the attack, or let it through.` : 'No active Blocker available.'}</span>
         <button class="btn small ${n ? 'secondary' : 'gold'}" id="prompt-noblock">${n ? "Don't Block" : 'Continue'}</button></div>`;
     } else if (b.step === 'block') {
       html = `<div class="prompt-banner"><span class="txt">Attack declared — ${oppName} is deciding whether to block…</span></div>`;
+    } else if (b.step === 'counter' && iDefend && pendingCounter) {
+      html = `<div class="prompt-banner"><span class="txt">Trash <b>${escapeHtml(pendingCounter.name)}</b> from your hand for its <b>+${pendingCounter.counter} Counter</b>?</span>
+        <button class="btn small gold" id="prompt-counter-yes">Yes, use it</button><button class="btn small secondary" id="prompt-counter-no">Cancel</button></div>`;
     } else if (b.step === 'counter' && iDefend) {
       html = `<div class="prompt-banner"><span class="txt"><b>Counter Step:</b> click blue-highlighted cards in your hand to add power${b.counterPower ? ` (+${b.counterPower} so far)` : ''}, then confirm.</span>
         <button class="btn small gold" id="prompt-counter-done">${b.counterPower ? 'Done Countering' : 'No Counter'}</button></div>`;
@@ -689,8 +755,16 @@ function renderPrompts(me, opp) {
   } else if (selectedAttacker) {
     html = `<div class="prompt-banner"><span class="txt">Choose a target: ${oppName}'s <b>Leader</b> or a <b>rested</b> Character (red glow). Tip: you can also just drag your card onto the target.</span>
       <button class="btn small secondary" id="prompt-cancel-attack">Cancel</button></div>`;
+  } else if (pendingDonAttach) {
+    html = `<div class="prompt-banner"><span class="txt">Attach <b>${pendingDonAttach.count} DON!!</b> to <b>${escapeHtml(targetLabel(pendingDonAttach.target))}</b> (+${pendingDonAttach.count * 1000} power this turn)?</span>
+      <button class="btn small gold" id="prompt-don-yes">Attach</button><button class="btn small secondary" id="prompt-don-no">Cancel</button></div>`;
+  } else if (endTurnArmed) {
+    html = `<div class="prompt-banner"><span class="txt">End your turn now?</span>
+      <button class="btn small gold" id="prompt-end-yes">Yes, End Turn</button><button class="btn small secondary" id="prompt-end-no">Keep Playing</button></div>`;
   } else if (attachDonMode) {
-    html = `<div class="prompt-banner"><span class="txt">Click your Leader or a Character to attach 1 DON!! (+1000 power this turn). ${me.cost.active} active DON!! left.</span>
+    const all = attachDonMode === 'all';
+    html = `<div class="prompt-banner"><span class="txt">Click your Leader or a Character to attach ${all ? `<b>all ${me.cost.active}</b> active DON!! (+${me.cost.active * 1000} power)` : '1 DON!! (+1000 power this turn)'}. ${me.cost.active} active DON!! left.</span>
+      ${SET('attachAllDon') ? `<button class="btn small ${all ? 'gold' : 'secondary'}" id="prompt-attach-all-toggle">${all ? 'Attaching ALL' : 'Attach ALL'}</button>` : ''}
       <button class="btn small secondary" id="prompt-stop-attach">Done</button></div>`;
   } else if (awaitingHandDiscard) {
     html = `<div class="prompt-banner"><span class="txt">Click a card in your hand to discard it.</span><button class="btn small secondary" id="prompt-cancel-discard">Cancel</button></div>`;
@@ -704,6 +778,14 @@ function renderPrompts(me, opp) {
   on('prompt-effect-confirm', () => { send('resolveEffectTargets', { selected: effectSelected }); effectSelected = []; });
   on('prompt-noblock', () => send('respondBlock', { blockerIndex: null }));
   on('prompt-counter-done', () => send('respondCounter', { boost: 0 }));
+  on('prompt-draw', () => send('drawCard'));
+  on('prompt-counter-yes', () => { if (pendingCounter) send('playCounterCharacter', { handIndex: pendingCounter.handIndex }); pendingCounter = null; });
+  on('prompt-counter-no', () => { pendingCounter = null; render(); });
+  on('prompt-don-yes', () => { if (pendingDonAttach) send('attachDon', { count: pendingDonAttach.count, target: pendingDonAttach.target }); pendingDonAttach = null; });
+  on('prompt-don-no', () => { pendingDonAttach = null; render(); });
+  on('prompt-end-yes', () => { endTurnArmed = false; send('endMainPhase'); });
+  on('prompt-end-no', () => { endTurnArmed = false; render(); });
+  on('prompt-attach-all-toggle', () => { attachDonMode = attachDonMode === 'all' ? true : 'all'; render(); });
   on('prompt-cancel-attack', () => { selectedAttacker = null; render(); });
   on('prompt-stop-attach', () => { attachDonMode = false; render(); });
   on('prompt-cancel-discard', () => { awaitingHandDiscard = false; render(); });
@@ -717,9 +799,15 @@ function updateActionBar(me) {
   const anyPlayable = myMain && me.hand.some((id) => { const c = getCard(id); return c && c.cost !== null && c.cost <= me.cost.active; });
   const anyAttack = myMain && (!me.leaderState.rested || me.characterArea.some((c) => c && !c.rested && c.canAttack));
   endBtn.classList.toggle('pulse', myMain && !anyPlayable && !anyAttack);
+  endBtn.textContent = endTurnArmed ? 'Really End?' : 'End Turn';
+  endBtn.classList.toggle('armed', endTurnArmed);
   const ad = document.getElementById('attach-don-btn');
   ad.disabled = over || (!myMain && !attachDonMode) || (myMain && me.cost.active === 0 && !attachDonMode);
   ad.textContent = attachDonMode ? 'Done Attaching' : 'Attach DON!!';
+  const aa = document.getElementById('attach-all-btn');
+  aa.style.display = SET('attachAllDon') ? '' : 'none';
+  aa.disabled = ad.disabled;
+  aa.classList.toggle('primary', attachDonMode === 'all');
   document.getElementById('toolbox-btn').classList.toggle('primary', toolboxMode);
   document.getElementById('concede-btn').disabled = over;
 }
@@ -750,6 +838,20 @@ function applyTbAction(act) {
   else if (act === 'rest') send('manualAction', { action: { type: 'toggleRest', side, target } });
   else if (act === 'ko') send('manualAction', { action: { type: 'ko', side, target } });
   else if (act === 'donDetach') send('manualAction', { action: { type: 'donDetach', target } });
+}
+
+// ---------- in-game settings panel (same options as the Settings page) ----------
+function openSettingsModal() {
+  if (document.getElementById('settings-modal')) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop'; wrap.id = 'settings-modal';
+  wrap.innerHTML = `<div class="modal settings-modal"><span class="close-x" id="settings-close">✕</span><h2>Settings</h2><div id="settings-panel"></div></div>`;
+  document.body.appendChild(wrap);
+  if (window.Settings) Settings.renderPanel(document.getElementById('settings-panel'));
+  const close = () => { wrap.remove(); if (STATE) render(); };
+  document.getElementById('settings-close').onclick = close;
+  wrap.addEventListener('click', (e) => { if (e.target === wrap) close(); });
+  if (window.SFX) SFX.play('open');
 }
 
 function gameOverHtml() {
@@ -829,7 +931,7 @@ function animateDiff(before) {
   }
   const newLog = S.log.filter((l) => !P.log.some((pl) => pl.ts === l.ts && pl.text === l.text)).map((l) => l.text).join(' | ');
   if (/mulligans their hand/.test(newLog)) if (window.SFX) SFX.play('shuffle');
-  if (/💬/.test(newLog)) if (window.SFX) SFX.play('chat');
+  if (/💬/.test(newLog)) { const mineName = S.players[S.you] && S.players[S.you].username; const theirs = newLog.split(' | ').some((l) => l.startsWith('💬 ') && !l.startsWith(`💬 ${mineName}:`)); if (window.SFX) SFX.play(theirs ? 'chat' : 'chatSent'); }
   if (S.winner !== null && P.winner === null) if (window.SFX) SFX.play(S.winner === S.you ? 'win' : 'lose');
 
   // turn changed → banner + phase sweep
@@ -1022,10 +1124,11 @@ document.addEventListener('keydown', (e) => {
   const tag = (e.target.tagName || '').toLowerCase();
   if (tag === 'input' || tag === 'textarea') return;
   if (e.key === 'Escape') {
+    if (document.getElementById('settings-modal')) { document.getElementById('settings-modal').remove(); return; }
     if (document.getElementById('pile-modal')) { closePileModal(); return; }
-    selectedAttacker = null; attachDonMode = false; awaitingHandDiscard = false; render();
+    selectedAttacker = null; attachDonMode = false; awaitingHandDiscard = false; endTurnArmed = false; pendingDonAttach = null; pendingCounter = null; render();
   } else if (e.key === 'e' || e.key === 'E') {
-    if (isMyMain()) { send('endMainPhase'); }
+    if (isMyMain()) document.getElementById('end-turn-btn').click();
   } else if (e.key === 'l' || e.key === 'L') {
     document.getElementById('toggle-side-btn').click();
   } else if (e.key === 'Enter') {

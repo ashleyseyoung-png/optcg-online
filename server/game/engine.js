@@ -44,6 +44,8 @@ class Player {
     this.donDeckCount = 10;
     this.mulliganUsed = false;
     this.hasMulliganed = false;
+    // per-player convenience settings (sent by the client; bots keep the defaults)
+    this.prefs = { autoDraw: true, autoSkipTrigger: true };
   }
   boardCard(id) { return { uid: nextUid(), cardId: id, rested: false, donAttached: 0, powerMod: 0, canAttack: false }; }
 }
@@ -61,6 +63,7 @@ class Game {
     this.pendingEffect = null; // { playerSeat, cardId, text, pool, min, max, apply, kind }
     this.pendingBattle = null; // combat sub-state machine
     this.pendingTrigger = null; // life-card trigger reveal choice
+    this.pendingDraw = null;    // seat waiting to click Draw ("Auto Draw" off)
     this.pendingMulligan = [false, false];
     this._setup();
   }
@@ -121,15 +124,43 @@ class Game {
     this.phase = 'draw';
     const isVeryFirstTurn = isFirstTurnOfGame && this.turnNumber === 1 && seat === this.startingPlayer;
     if (!isVeryFirstTurn) {
+      if (p.prefs.autoDraw === false) {
+        // "Auto Draw" off: wait for the player to click Draw (like drawing by hand at a table)
+        this.pendingDraw = seat;
+        this._log(`${p.username}'s Draw Phase — waiting for them to draw.`);
+        return;
+      }
       this._drawCards(p, 1);
     }
+    this._afterDraw(p, isVeryFirstTurn);
+  }
 
+  // Draw Phase → DON!! Phase → Main Phase
+  _afterDraw(p, isVeryFirstTurn) {
+    this.pendingDraw = null;
     this.phase = 'don';
     const donGain = isVeryFirstTurn ? 1 : 2;
     this._giveDon(p, donGain);
 
     this.phase = 'main';
     this._log(`${p.username}'s Main Phase.`);
+  }
+
+  // Manual draw when the player has "Auto Draw" turned off.
+  drawPhaseDraw(seat) {
+    this._assertTurn(seat);
+    if (this.phase !== 'draw' || this.pendingDraw !== seat) throw new Error('Nothing to draw right now');
+    const p = this.players[seat];
+    this._drawCards(p, 1);
+    if (this.winner !== null) return;
+    this._afterDraw(p, false);
+  }
+
+  setPrefs(seat, prefs) {
+    const p = this.players[seat];
+    if (!p || !prefs || typeof prefs !== 'object') return;
+    if ('autoDraw' in prefs) p.prefs.autoDraw = !!prefs.autoDraw;
+    if ('autoSkipTrigger' in prefs) p.prefs.autoSkipTrigger = !!prefs.autoSkipTrigger;
   }
 
   _drawCards(p, n) {
@@ -218,6 +249,7 @@ class Game {
     this._assertTurn(seat);
     if (this.phase !== 'main') throw new Error('You can only give DON!! during your Main Phase');
     const p = this.players[seat];
+    count = Math.max(1, Math.floor(Number(count) || 1));
     if (p.cost.active < count) throw new Error('Not enough active DON!!');
     p.cost.active -= count;
     if (target === 'leader') {
@@ -443,6 +475,11 @@ class Game {
     if (card && card.keywords.includes('Trigger')) {
       this.pendingTrigger = { seat: defenderP.seat, cardId };
       this._log(`${defenderP.username} takes damage and reveals a card with [Trigger] — waiting on their choice.`);
+    } else if (defenderP.prefs.autoSkipTrigger === false) {
+      // "Auto Skip Trigger" off: the player looks at every life card themselves, so the
+      // opponent can't tell from timing whether it had a Trigger.
+      this.pendingTrigger = { seat: defenderP.seat, cardId, noTrigger: true };
+      this._log(`${defenderP.username} takes damage and looks at the life card…`);
     } else {
       defenderP.hand.push(cardId);
       this._log(`${defenderP.username} takes damage — life card added to hand.`);
@@ -454,6 +491,7 @@ class Game {
     if (!t || t.seat !== seat) throw new Error('No pending trigger for you');
     const p = this.players[seat];
     const card = getCard(t.cardId);
+    if (t.noTrigger) activate = false; // nothing to activate — it just goes to hand
     if (activate) {
       this._log(`${p.username} activates ${card.name}'s [Trigger]!`);
       const m = card.text.match(/\[Trigger\]\s*(.*?)(?:\.|$)/i);
@@ -465,7 +503,7 @@ class Game {
       p.trash.unshift(t.cardId);
     } else {
       p.hand.push(t.cardId);
-      this._log(`${p.username} adds the revealed card to their hand instead.`);
+      this._log(t.noTrigger ? `${p.username} adds the life card to their hand.` : `${p.username} adds the revealed card to their hand instead.`);
     }
     this.pendingTrigger = null;
   }
@@ -624,7 +662,8 @@ class Game {
       players: this.players.map((p, i) => view(p, i === viewerSeat)),
       pendingBattle: this.pendingBattle,
       pendingEffect: this.pendingEffect && { seat: this.pendingEffect.seat, cardName: this.pendingEffect.cardName, text: this.pendingEffect.text, pool: this.pendingEffect.pool, max: this.pendingEffect.max, side: this.pendingEffect.side },
-      pendingTrigger: this.pendingTrigger && { seat: this.pendingTrigger.seat, cardId: this.pendingTrigger.seat === viewerSeat ? this.pendingTrigger.cardId : null },
+      pendingTrigger: this.pendingTrigger && { seat: this.pendingTrigger.seat, cardId: this.pendingTrigger.seat === viewerSeat ? this.pendingTrigger.cardId : null, noTrigger: this.pendingTrigger.seat === viewerSeat ? !!this.pendingTrigger.noTrigger : undefined },
+      pendingDraw: this.pendingDraw,
       log: this.log.slice(-60),
     };
   }

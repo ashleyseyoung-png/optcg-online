@@ -121,6 +121,8 @@ class RoomManager {
         case 'respondTrigger': g.respondTrigger(seat, !!msg.activate); break;
         case 'resolveEffectTargets': g.resolveEffectTargets(seat, msg.selected || []); break;
         case 'endMainPhase': g.endMainPhase(seat); break;
+        case 'drawCard': g.drawPhaseDraw(seat); break;
+        case 'setPrefs': g.setPrefs(seat, msg.prefs); break;
         case 'manualAction': g.manualAction(seat, msg.action); break;
         case 'concede': g.concede(seat); break;
         case 'chat': {

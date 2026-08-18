@@ -8,7 +8,7 @@
     ctx: null,
     master: null,
     muted: (function () { try { return localStorage.getItem('gl_sfx_muted') === '1'; } catch (e) { return false; } })(),
-    volume: 0.5,
+    volume: (function () { try { return window.Settings ? Settings.get('sfxVolume') / 100 : 0.5; } catch (e) { return 0.5; } })(),
     _last: {},
     _noiseBuf: null,
   };
@@ -108,7 +108,9 @@
     prompt:  () => { pluck(740, { peak: 0.08, dur: 0.25 }); },
     win:     () => { [523, 659, 784, 1047].forEach((f, i) => pluck(f, { peak: 0.14, dur: 0.6, at: i * 0.12 })); },
     lose:    () => { pluck(392, { peak: 0.12, dur: 0.6 }); pluck(311, { peak: 0.11, dur: 0.8, at: 0.2 }); },
-    chat:    () => { pluck(1047, { peak: 0.06, dur: 0.2 }); },
+    // chat: a bright two-note "bloop" that stands out from the softer game sounds
+    chat:    () => { tone({ freq: 660, type: 'sine', dur: 0.09, peak: 0.16 }); tone({ freq: 990, type: 'sine', dur: 0.16, peak: 0.16, at: 0.09 }); pluck(1320, { peak: 0.07, at: 0.16, dur: 0.25 }); },
+    chatSent: () => { tone({ freq: 880, type: 'sine', dur: 0.08, peak: 0.1 }); tone({ freq: 660, type: 'sine', dur: 0.12, peak: 0.1, at: 0.08 }); },
   };
   const THROTTLE = { tap: 70, click: 40, place: 60, draw: 90, don: 80, hit: 120, attack: 150 };
 
@@ -119,6 +121,10 @@
     if (THROTTLE[name] && !throttled(name, THROTTLE[name])) return;
     const fn = LIB[name];
     if (fn) { try { fn(); } catch (e) { /* never let audio break the UI */ } }
+  }
+  function setVolume(v) { // 0..1
+    SFX.volume = Math.max(0, Math.min(1, v));
+    if (SFX.master) SFX.master.gain.value = SFX.muted ? 0 : SFX.volume;
   }
   function setMuted(m) {
     SFX.muted = !!m;
@@ -146,5 +152,6 @@
   });
   document.addEventListener('DOMContentLoaded', () => setMuted(SFX.muted));
 
-  window.SFX = { play, toggle, setMuted, get muted() { return SFX.muted; } };
+  if (window.Settings) Settings.onChange((k, v) => { if (k === 'sfxVolume') { setVolume(v / 100); if (v > 0 && SFX.muted) setMuted(false); } });
+  window.SFX = { play, toggle, setMuted, setVolume, get muted() { return SFX.muted; } };
 })();

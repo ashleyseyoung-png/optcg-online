@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Settings — Grand Line TCG</title>
+<link rel="stylesheet" href="/css/style.css" />
+<style>
+  .settings-page { max-width: 760px; margin: 0 auto; padding: 20px 20px 60px; }
+  .settings-card { background: var(--navy); border: 3px solid rgba(255,255,255,0.28); border-radius: var(--r-xl); padding: 22px 26px; box-shadow: var(--shadow-soft); }
+  .settings-intro { color: var(--text-dim); font-size: 0.92rem; margin: 0 0 6px; }
+  .music-note { margin-top: 18px; font-size: 0.82rem; color: var(--text-dim); background: rgba(255,255,255,0.06); border-radius: 14px; padding: 10px 14px; line-height: 1.45; }
+  .music-note b { color: var(--sun); }
+  .music-test { display:flex; gap:10px; align-items:center; margin-top: 10px; }
+</style>
+</head>
+<body>
+<header class="topnav">
+  <div class="brand"><span class="skull">☠</span> Grand Line TCG</div>
+  <nav>
+    <a href="/index.html">Home</a>
+    <a href="/learn.html">Learn to Play</a>
+    <a href="/decks.html">Deck Builder</a>
+    <a href="/play.html">Play</a>
+    <a href="/settings.html" class="active">Settings</a>
+  </nav>
+  <div class="user-box" id="user-box"></div>
+</header>
+
+<div class="settings-page">
+  <h1 style="margin: 6px 0 4px;">Settings</h1>
+  <p class="settings-intro">Saved on this device and applied instantly — in the game these are also under the ⚙️ button at the top of the table.</p>
+  <div class="settings-card">
+    <div id="settings-panel"></div>
+    <div class="music-note">
+      <b>About the music:</b> the built-in track is an original nautical instrumental generated live in your browser (no files, no copyright issues). Prefer your own tune? Put an MP3 at <code>public/audio/bgm.mp3</code> in the app folder and it plays instead, looped, with the same volume control.
+      <div class="music-test"><button class="btn small secondary" id="music-test-btn">▶ Play / pause music</button><button class="btn small secondary" id="sfx-test-btn">🔔 Test sound effect</button></div>
+    </div>
+  </div>
+</div>
+
+<footer>Card data & images sourced from public One Piece TCG card databases for reference use.</footer>
+
+<script src="/js/settings.js"></script>
+<script src="/js/sfx.js"></script>
+<script src="/js/bgm.js"></script>
+<script src="/js/common.js"></script>
+<script>
+  Settings.renderPanel(document.getElementById('settings-panel'));
+  document.getElementById('music-test-btn').onclick = () => { if (BGM.playing) BGM.stop(); else { if (!Settings.get('music')) { Settings.set('music', true); Settings.renderPanel(document.getElementById('settings-panel')); } BGM.start(); } };
+  document.getElementById('sfx-test-btn').onclick = () => SFX.play('chat');
+</script>
+</body>
+</html>

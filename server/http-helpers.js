@@ -16,6 +16,10 @@ const MIME = {
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
   '.woff2': 'font/woff2',
+  '.mp3': 'audio/mpeg',
+  '.ogg': 'audio/ogg',
+  '.wav': 'audio/wav',
+  '.webp': 'image/webp',
 };
 
 function parseCookies(req) {

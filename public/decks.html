@@ -15,72 +15,90 @@
     <a href="/learn.html">Learn to Play</a>
     <a href="/decks.html" class="active">Deck Builder</a>
     <a href="/play.html">Play</a>
+    <a href="/settings.html">Settings</a>
   </nav>
   <div class="user-box" id="user-box"></div>
 </header>
 
-<div class="container" style="padding-top:20px;">
-  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-    <h1 style="margin:6px 0;">Deck Builder</h1>
-    <div class="saved-decks-bar" style="display:flex; gap:8px; align-items:center;">
-      <select id="my-decks-select"><option value="">My decks…</option></select>
-      <select id="starter-select"><option value="">Load a starter deck…</option></select>
-      <button class="btn small secondary" id="new-deck-btn">+ New Deck</button>
-      <button class="btn small danger" id="delete-deck-btn" style="display:none;">Delete</button>
-    </div>
+<div class="builder-head">
+  <h1 style="margin:6px 0;">Deck Builder</h1>
+  <div class="saved-decks-bar">
+    <select id="my-decks-select"><option value="">My decks…</option></select>
+    <select id="starter-select"><option value="">Load a starter deck…</option></select>
+    <button class="btn small secondary" id="new-deck-btn">+ New Deck</button>
   </div>
 </div>
 
 <div class="builder-layout">
-  <div>
-    <div class="builder-toolbar">
-      <input id="search" placeholder="Search name, card ID (e.g. OP05-119), type or text…" />
-      <select id="filter-leader-color"><option value="">Only my Leader's colors</option><option value="all">All colors</option></select>
-      <select id="filter-type">
-        <option value="">All Types</option>
-        <option value="Leader">Leaders</option>
-        <option value="Character">Characters</option>
-        <option value="Event">Events</option>
-        <option value="Stage">Stages</option>
-      </select>
-      <select id="filter-cost">
-        <option value="">Any Cost</option>
-        <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-        <option value="3">3</option><option value="4">4</option><option value="5">5</option>
-        <option value="6">6</option><option value="7">7</option><option value="8">8+</option>
-      </select>
-      <select id="filter-set"><option value="">All Sets</option></select>
-      <select id="filter-art" title="Alternate arts, parallels, SP/SPR, manga arts and promos are the same card as the regular print — pick whichever art you like">
-        <option value="">All art versions</option>
-        <option value="base">Regular art only</option>
-        <option value="alt">Alt arts &amp; promos only</option>
-      </select>
-      <span id="grid-count" style="color:var(--paper-2); font-size:0.8rem; white-space:nowrap;"></span>
-    </div>
-    <div class="card-grid" id="card-grid"></div>
+  <div class="builder-main">
+
+    <!-- ===== the deck, visually ===== -->
+    <section class="deck-visual card-panel">
+      <div class="dv-top">
+        <div class="dv-leader" id="dv-leader"></div>
+        <div class="dv-stats" id="deck-stats"></div>
+      </div>
+      <div class="dv-cards-head">
+        <span class="dv-title">Cards in deck <span class="dv-hint">· click a stack to change its artwork · hover for −/+</span></span>
+        <span class="deck-count" id="deck-count">0 / 50</span>
+      </div>
+      <div class="dv-cards" id="deck-visual"></div>
+    </section>
+
+    <!-- ===== card search ===== -->
+    <section class="builder-search">
+      <div class="builder-toolbar">
+        <input id="search" placeholder="Search name, card code (e.g. ST32-005), type or text…" />
+        <select id="filter-leader-color"><option value="">Only my Leader's colors</option><option value="all">All colors</option></select>
+        <select id="filter-type">
+          <option value="">All Types</option>
+          <option value="Leader">Leaders</option>
+          <option value="Character">Characters</option>
+          <option value="Event">Events</option>
+          <option value="Stage">Stages</option>
+        </select>
+        <select id="filter-cost">
+          <option value="">Any Cost</option>
+          <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+          <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+          <option value="6">6</option><option value="7">7</option><option value="8">8+</option>
+        </select>
+        <select id="filter-set"><option value="">All Sets</option></select>
+        <select id="filter-art" title="Alternate arts, parallels, SP/SPR, manga arts and promos are the same card as the regular print — pick whichever art you like">
+          <option value="">All art versions</option>
+          <option value="base">Regular art only</option>
+          <option value="alt">Alt arts &amp; promos only</option>
+        </select>
+        <span id="grid-count" style="color:var(--paper-2); font-size:0.8rem; white-space:nowrap;"></span>
+      </div>
+      <div class="card-grid" id="card-grid"></div>
+    </section>
   </div>
 
-  <div class="deck-panel card-panel">
-    <div class="field" style="margin-bottom:10px;">
-      <input id="deck-name" value="New Deck" style="width:100%; font-weight:700;" />
-    </div>
+  <!-- ===== side panel: name / list / save ===== -->
+  <aside class="deck-panel card-panel">
+    <label class="deck-name-label" for="deck-name">Deck name</label>
+    <input id="deck-name" value="" placeholder="Name your deck… (e.g. Red Zoro Rush)" style="width:100%; font-weight:800;" />
     <div class="leader-slot" id="leader-slot">
-      <div style="color:var(--paper-2); font-size:0.85rem;">No Leader chosen — click a Leader card on the left.</div>
-    </div>
-    <div style="display:flex; justify-content:space-between; align-items:baseline;">
-      <span>Deck</span>
-      <span class="deck-count" id="deck-count">0 / 50</span>
+      <div style="color:var(--paper-2); font-size:0.85rem;">No Leader chosen — click a Leader card in the search below.</div>
     </div>
     <div class="deck-list" id="deck-list"></div>
     <div class="legal-errors" id="legal-errors"></div>
     <button class="btn gold" id="save-deck-btn" style="width:100%; margin-top:6px;">💾 Save Deck</button>
-    <button class="btn secondary" id="clear-deck-btn" style="width:100%; margin-top:8px;">Clear</button>
-  </div>
+    <div class="deck-actions">
+      <button class="btn small secondary" id="copy-deck-btn" title="Copies the deck list as text (works with OPTCGSim and most deck sites)">📋 Copy list</button>
+      <button class="btn small secondary" id="import-deck-btn" title="Paste a deck list (e.g. from OPTCGSim, a website or a friend)">📥 Import list</button>
+      <button class="btn small secondary" id="clear-deck-btn">Clear</button>
+      <button class="btn small danger" id="delete-deck-btn" style="display:none;">Delete</button>
+    </div>
+  </aside>
 </div>
 
-<footer>Card data & images sourced from public One Piece TCG card databases for reference use.</footer>
+<footer>Card data & images sourced from public One Piece TCG card databases for reference use. Deck statistics are computed from the card data in your deck (hypergeometric draw odds — see the ⓘ in Deck Stats).</footer>
 
+<script src="/js/settings.js"></script>
 <script src="/js/sfx.js"></script>
+<script src="/js/bgm.js"></script>
 <script src="/js/common.js"></script>
 <script src="/js/decks.js"></script>
 </body>
